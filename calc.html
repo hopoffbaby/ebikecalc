@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mid‑Drive Planner v10 — Gearing • Grades • Range • Uncertainty • Gear Visualizer</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#121821;--ink:#e8eef6;--muted:#a9b7c6;--accent:#4da3ff;--accent2:#7dffb0;--warn:#ffb84d;--danger:#ff6b6b;--grid:#233040}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{padding:14px 16px;border-bottom:1px solid #182232;background:linear-gradient(180deg,#0c121a,#0a0f15);position:sticky;top:0;z-index:5}
+  h1{font-size:18px;margin:0 0 4px 0}
+  .sub{color:var(--muted);font-size:12px}
+  main{padding:12px;max-width:1200px;margin:0 auto}
+  .grid{display:grid;gap:12px}
+  @media(min-width:1020px){.grid{grid-template-columns:440px 1fr}}
+  .card{background:var(--panel);border:1px solid #182232;border-radius:12px;padding:12px}
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .inputs .full{grid-column:1/-1}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+  input,select,button{width:100%;box-sizing:border-box;border-radius:8px;border:1px solid #223044;background:#0d131b;color:var(--ink);padding:10px 12px;font-size:14px;outline:none}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #4da3ff22}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{background:var(--accent);color:#001b33;border:none;font-weight:600;cursor:pointer}
+  .btn.secondary{background:#192434;color:var(--ink);border:1px solid #223044}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#162131;border:1px solid #223044;color:var(--ink);font-size:12px;cursor:pointer}
+  .section-title{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:4px 0 8px;display:flex;align-items:center;gap:6px}
+  canvas{width:100%;height:260px;border-radius:10px;background:#0c121a;border:1px solid #182232}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:6px 8px;border-bottom:1px solid #1a2634;text-align:right}
+  th{color:var(--muted);font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  .note{color:var(--muted);font-size:12px;line-height:1.45}
+  .badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#1b2838;color:var(--ink);font-size:11px;border:1px solid #223044}
+  .ok{color:#7dffb0}.no{color:#ff6b6b}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  /* Gear visualizer */
+  #gearVis{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+  #gearVis .col{background:#0c121a;border:1px solid #182232;border-radius:10px;padding:8px;text-align:center}
+  #gearVis .val{font-size:18px;font-weight:700}
+  #gearControls{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px}
+  #gearControls button{width:auto;min-width:44px}
+  .tip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#1b2a3d;color:#cfe2ff;border:1px solid #2a3c54;font-size:12px;cursor:help}
+  #gearCanvas{height:220px}
+  .narrow{max-width:520px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mid‑Drive Planner v10</h1>
+  <div class="sub">Fixed gear selector; added cog+wheel drawing and adjustable visualizer rpm.</div>
+</header>
+
+<main class="grid">
+  <section class="card">
+    <div class="section-title">Bike & Drivetrain</div>
+    <div class="inputs">
+      <div><label>Wheel size preset</label>
+        <select id="wheelPreset" title="Pick a typical wheel. Or choose Custom and type the measured tyre circumference.">
+          <option value="2100">26″ (≈2100 mm)</option>
+          <option value="2230">27.5″ (≈2230 mm)</option>
+          <option value="2310">29″ / 700c (≈2310 mm)</option>
+          <option value="custom">Use custom circumference</option>
+        </select>
+      </div>
+      <div><label>Custom circumference (mm)</label><input id="circumference" type="number" placeholder="e.g. 2100" title="Roll one wheel revolution and measure ground distance (mm)."></div>
+      <div><label>Front chainring teeth</label><input id="frontTeeth" type="number" value="40" min="22" max="60"></div>
+      <div><label>Rear cogs (teeth, CSV)</label><input id="rearCogs" class="full" type="text" value="13,14,16,18,21,24,28,34"></div>
+    </div>
+
+    <div class="section-title">Rider & Physics</div>
+    <div class="inputs">
+      <div><label>Total mass (kg)</label><input id="mass" type="number" value="160"></div>
+      <div><label>Crr (rolling)</label><input id="crr" type="number" step="0.001" value="0.006"></div>
+      <div><label>C<sub>d</sub>A (m²)</label><input id="cda" type="number" step="0.01" value="0.60"></div>
+      <div><label>Air density ρ</label><input id="rho" type="number" step="0.01" value="1.20"></div>
+      <div><label>Rider watts</label><input id="riderW" type="number" value="0"></div>
+      <div><label>Target climb speed (mph)</label><input id="climbMph" type="number" value="3"></div>
+    </div>
+
+    <div class="section-title">Motor & Power</div>
+    <div class="inputs">
+      <div class="full"><label>Power entry mode</label>
+        <select id="powerMode">
+          <option value="va">Voltage × Current × Efficiency (battery‑based)</option>
+          <option value="mech">Direct mechanical watts (at the shaft)</option>
+        </select>
+      </div>
+      <div><label>Battery voltage (V)</label><input id="voltage" type="number" value="52"></div>
+      <div><label>Controller current (A)</label><input id="current" type="number" value="30"></div>
+      <div><label>Motor+controller efficiency</label><input id="motorEff" type="number" step="0.01" value="0.82"></div>
+      <div><label>Mechanical watts (if using direct)</label><input id="mechW" type="number" value="1280"></div>
+      <div><label>Crank torque (Nm)</label><input id="crankTorque" type="number" value="160"></div>
+      <div><label>Drivetrain efficiency</label><input id="driveEff" type="number" step="0.01" value="0.95"></div>
+      <div><label>Max chainring rpm</label><input id="maxCadence" type="number" value="140"></div>
+    </div>
+
+    <div class="section-title">Battery & Range</div>
+    <div class="inputs">
+      <div><label>Battery capacity (Ah)</label><input id="batAh" type="number" value="20"></div>
+      <div><label>Usable % (leave reserve)</label><input id="usablePct" type="number" value="85"></div>
+      <div><label>Range cruise speed (mph)</label><input id="rangeMph" type="number" value="20"></div>
+      <div><label>Target climb grade for range (%)</label><input id="rangeGradePct" type="number" value="10"></div>
+    </div>
+
+    <div class="section-title">Presets</div>
+    <div class="row">
+      <button class="pill" data-rear="14,16,18,20,22,24,26">7‑spd 14–26</button>
+      <button class="pill" data-rear="13,14,16,18,21,24,28,34">MegaRange 13–34</button>
+      <button class="pill" data-rear="12,14,16,18,21,24,28,32">8‑spd 12–32</button>
+      <button class="pill" id="preset_power">52 V × 30 A (0.82)</button>
+      <button class="pill" id="preset_rpm">Spec: 150 rpm</button>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="computeBtn" class="btn">Compute</button>
+      <button id="resetBtn" class="btn secondary">Reset defaults</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Global summary</div>
+    <div id="summary" class="note"></div>
+
+    <div class="two-col" style="gap:12px; margin-top:10px">
+      <div>
+        <div class="section-title">Range estimate</div>
+        <div id="rangeBox" class="note"></div>
+      </div>
+      <div>
+        <div class="section-title">Slope per gear (visual)</div>
+        <canvas id="chartSlope" style="height:200px"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:12px">Gear visualizer — chainring → cog → wheel</div>
+    <div class="narrow">
+      <div class="row">
+        <label>Visualizer chainring rpm</label>
+        <input id="visRpm" type="range" min="0" max="200" value="1" step="1" style="flex:1">
+        <input id="visRpmNum" type="number" value="1" min="0" max="300" step="1" style="width:90px">
+      </div>
+    </div>
+    <div id="gearVis">
+      <div class="col">
+        <div class="note">Chainring</div>
+        <div class="val" id="gv_crank_rpm">1.00 rpm</div>
+        <div class="note" id="gv_frontT">—</div>
+      </div>
+      <div style="text-align:center">
+        <div id="gearControls">
+          <button id="gearDown" class="btn" title="Shift to a smaller rear sprocket (harder gear)">▼</button>
+          <div class="badge" id="gv_label">Gear 1/—</div>
+          <button id="gearUp" class="btn" title="Shift to a larger rear sprocket (easier gear)">▲</button>
+        </div>
+        <div class="note" id="gv_ratio">ratio —</div>
+      </div>
+      <div class="col">
+        <div class="note">Wheel</div>
+        <div class="val" id="gv_wheel_rpm">— rpm</div>
+        <div class="note" id="gv_speed">— mph</div>
+      </div>
+    </div>
+    <canvas id="gearCanvas"></canvas>
+
+    <div class="section-title" style="margin-top:12px">Per‑gear results</div>
+    <div class="note" style="margin-bottom:6px">
+      <span class="badge">Columns</span>
+      “Top mph (rpm‑limit)” = speed at your chainring rpm cap in that gear. 
+      “Max grade (torque @v)” uses your set climb speed. “Actual” = min(power‑limit, torque‑limit).
+    </div>
+    <div style="overflow:auto">
+      <table id="resultTable">
+        <thead><tr>
+          <th>Gear</th><th>Ratio</th><th>Top mph (rpm‑limit)</th>
+          <th>Wheel torque (Nm)</th><th>Max grade (torque @v)</th><th>Max grade (actual @v)</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="section-title" style="margin-top:14px">Charts</div>
+    <div class="grid" style="grid-template-columns:1fr;gap:10px">
+      <canvas id="chartSpeed"></canvas>
+      <canvas id="chartTorque"></canvas>
+      <canvas id="chartGrade"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Reverse engineer gearing</div>
+    <div class="inputs">
+      <div><label>Target top speed (mph)</label><input id="targetTopMph" type="number" value="29"></div>
+      <div><label>Target climb grade (%)</label><input id="targetGradePct" type="number" value="15"></div>
+      <div class="full"><label>What is fixed?</label>
+        <select id="fixedWhat">
+          <option value="none">Nothing (suggest both)</option>
+          <option value="ring">Chainring is fixed</option>
+          <option value="cassette">Cassette extremes are fixed</option>
+        </select>
+      </div>
+      <div><label>Fixed ring (T)</label><input id="fixedRing" type="number" value="40"></div>
+      <div><label>Fixed cassette small (T)</label><input id="fixedSmall" type="number" value="13"></div>
+      <div><label>Fixed cassette large (T)</label><input id="fixedLarge" type="number" value="34"></div>
+      <div class="full"><button id="solveBtn" class="btn">Solve gearing</button></div>
+    </div>
+    <div id="solveOut" class="note" style="margin-top:8px"></div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Uncertainty sweeps (multi‑scenario)</div>
+    <div class="inputs">
+      <div><label># samples</label><input id="N" type="number" value="300"></div>
+      <div><label>Mass min (kg)</label><input id="u_mass_min" type="number" value="150"></div>
+      <div><label>Mass max (kg)</label><input id="u_mass_max" type="number" value="170"></div>
+      <div><label>Max chainring rpm min</label><input id="u_rpm_min" type="number" value="130"></div>
+      <div><label>Max chainring rpm max</label><input id="u_rpm_max" type="number" value="150"></div>
+      <div><label>Voltage min</label><input id="u_V_min" type="number" value="50"></div>
+      <div><label>Voltage max</label><input id="u_V_max" type="number" value="58"></div>
+      <div><label>Current min</label><input id="u_A_min" type="number" value="28"></div>
+      <div><label>Current max</label><input id="u_A_max" type="number" value="35"></div>
+      <div><label>Eff min</label><input id="u_eff_min" type="number" step="0.01" value="0.78"></div>
+      <div><label>Eff max</label><input id="u_eff_max" type="number" step="0.01" value="0.85"></div>
+      <div><label>Crank torque min (Nm)</label><input id="u_T_min" type="number" value="140"></div>
+      <div><label>Crank torque max (Nm)</label><input id="u_T_max" type="number" value="170"></div>
+      <div><label>Rider W min</label><input id="u_RW_min" type="number" value="0"></div>
+      <div><label>Rider W max</label><input id="u_RW_max" type="number" value="150"></div>
+      <div><label>Crr min</label><input id="u_Crr_min" type="number" step="0.001" value="0.005"></div>
+      <div><label>Crr max</label><input id="u_Crr_max" type="number" step="0.001" value="0.008"></div>
+      <div><label>CdA min</label><input id="u_CdA_min" type="number" step="0.01" value="0.55"></div>
+      <div><label>CdA max</label><input id="u_CdA_max" type="number" step="0.01" value="0.70"></div>
+      <div class="full"><button id="uncBtn" class="btn">Run uncertainty</button></div>
+    </div>
+    <div id="uncOut" class="note" style="margin-top:8px"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  const g = 9.80665;
+  const MPH_PER_MPS = 2.23693629;
+  const MPS_PER_MPH = 0.44704;
+  const stdSmall = [11,12,13,14];
+  const stdLarge = [26,28,30,32,34,36,40,42,46,50];
+
+  const $ = s=>document.querySelector(s);
+  const $$ = s=>Array.from(document.querySelectorAll(s));
+
+  let gearIndex = 0;
+  let firstCompute = true;
+
+  function parseRear(csv){
+    return csv.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0).sort((a,b)=>a-b);
+  }
+  function getCirc(){
+    const p = $('#wheelPreset').value;
+    const c = parseFloat($('#circumference').value);
+    if(p==='custom' && c>0) return c/1000;
+    if(c>0 && p!=='custom') return c/1000;
+    const mm = parseFloat(p);
+    return (mm>0?mm:2100)/1000;
+  }
+  function binSearchTopSpeedFlat(P, m, Crr, rho, CdA){
+    let lo=0, hi=35;
+    for(let i=0;i<64;i++){
+      const v=(lo+hi)/2;
+      const f = 0.5*rho*CdA*v*v*v + m*g*Crr*v - P;
+      if(f>0) hi=v; else lo=v;
+    }
+    return (lo+hi)/2;
+  }
+  function drawChart(canvas, labels, series, options){
+    const dpr=Math.max(1,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+    const ctx=canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    const pad={l:44,r:10,t:16,b:30}, plotW=w-pad.l-pad.r, plotH=h-pad.t-pad.b;
+    ctx.fillStyle='#a9b7c6'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+    if(options&&options.title) ctx.fillText(options.title,pad.l,4);
+    let ymin=Infinity,ymax=-Infinity;
+    series.forEach(s=>s.data.forEach(v=>{ if(v==null)return; ymin=Math.min(ymin,v); ymax=Math.max(ymax,v);}));
+    if(!isFinite(ymin)||!isFinite(ymax)){ymin=0;ymax=1;} if(ymin===ymax){ymin=0;ymax=ymax||1;}
+    const padY=(ymax-ymin)*0.08||1; ymin-=padY; ymax+=padY;
+    const xTo=(i)=> pad.l + (plotW*(labels.length<=1?0:i/(labels.length-1)));
+    const yTo=(v)=> pad.t + plotH*(1 - (v - ymin)/(ymax - ymin));
+    const grid='#233040'; const ax='#7d92a9';
+    const pal=['#4da3ff','#7dffb0','#ffb84d','#ff6b6b','#c18bff'];
+    ctx.strokeStyle=grid; ctx.lineWidth=1; ctx.beginPath();
+    for(let gy=0;gy<=5;gy++){ const y=pad.t + plotH*gy/5; ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+plotW,y); } ctx.stroke();
+    ctx.fillStyle=ax; ctx.textAlign='right'; ctx.textBaseline='middle';
+    for(let gy=0;gy<=5;gy++){ const v=ymin+(ymax-ymin)*gy/5; ctx.fillText((options&&options.formatY?options.formatY(v):v.toFixed(1)), pad.l-6, yTo(v)); }
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    labels.forEach((lab,i)=> ctx.fillText(lab, xTo(i), pad.t+plotH+6));
+    series.forEach((s,si)=>{
+      ctx.lineWidth=2; ctx.strokeStyle=s.color||pal[si%pal.length]; ctx.setLineDash(s.dashed?[5,4]:[]);
+      ctx.beginPath();
+      s.data.forEach((v,i)=>{ if(v==null)return; const x=xTo(i), y=yTo(v); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.stroke();
+      if(!s.hidePoints){
+        s.data.forEach((v,i)=>{ if(v==null)return; const x=xTo(i), y=yTo(v); ctx.fillStyle=s.color||pal[si%pal.length]; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+      }
+    });
+  }
+  function drawSlopeVisual(canvas, labels, gradePctList){
+    const dpr=Math.max(1,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
+    canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+    const ctx=canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    const pad={l:10,r:10,t:10,b:36};
+    const plotW=w-pad.l-pad.r, plotH=h-pad.t-pad.b;
+    const N = labels.length;
+    if(N===0){ return; }
+    const colW = plotW / N;
+    ctx.fillStyle='#7f92a9'; ctx.font='11px system-ui,sans-serif'; ctx.textAlign='center';
+    for(let i=0;i<N;i++){
+      const pct = gradePctList[i]||0;
+      const theta = Math.atan((pct)/100);
+      const len = Math.min(40, colW*0.8);
+      const cx = pad.l + colW*(i+0.5);
+      const cy = pad.t + plotH*0.65;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-theta);
+      ctx.fillStyle='#1a2634'; ctx.fillRect(-len/2, -4, len, 8);
+      ctx.strokeStyle='#2b3b52'; ctx.lineWidth=1;
+      for(let s=-len/2; s<=len/2; s+=8){ ctx.beginPath(); ctx.moveTo(s, -4); ctx.lineTo(s+4, 4); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle='#a9b7c6'; ctx.fillText(labels[i], cx, h - 22);
+      ctx.fillStyle='#7dffb0'; ctx.fillText(`${pct.toFixed(0)}%`, cx, h - 10);
+    }
+  }
+
+  function clampGear(n, rears){ return Math.max(0, Math.min(n, rears.length-1)); }
+
+  function drawGearCanvas(rears){
+    const canvas = $('#gearCanvas');
+    const dpr = Math.max(1, window.devicePixelRatio||1);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w*dpr); canvas.height = Math.round(h*dpr);
+    const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+
+    if(!rears.length) return;
+    const front = parseInt($('#frontTeeth').value,10)||40;
+    const rear = rears[gearIndex];
+    const circ = getCirc();
+    const visRpm = parseFloat($('#visRpmNum').value)||1;
+
+    // Layout: chainring left, rear cog mid-right, wheel far-right
+    const pad = {l:16, r:16, t:12, b:20};
+    const leftX = pad.l + 60;
+    const midX = w/2 + 20;
+    const wheelX = w - 120;
+    const centerY = h/2 + 10;
+
+    // Scale cog radii by sqrt(teeth) for aesthetics
+    const scale = 2.2;
+    const rFront = Math.max(18, Math.sqrt(front)*scale);
+    const rRear = Math.max(10, Math.sqrt(rear)*scale);
+    const rWheel = Math.min(90, Math.max(60, (circ/(2*Math.PI))*35)); // stylized, not to scale
+
+    // Draw circles
+    ctx.lineWidth=2;
+    function ring(x,y,r,color){ ctx.strokeStyle=color; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke(); }
+    ring(leftX, centerY, rFront, '#4da3ff');
+    ring(midX, centerY, rRear, '#ffb84d');
+    ring(wheelX, centerY, rWheel, '#7dffb0');
+
+    // Chain path (straight belts)
+    ctx.strokeStyle='#2a3c54'; ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(leftX + rFront, centerY);
+    ctx.lineTo(midX - rRear, centerY);
+    ctx.stroke();
+
+    // Ratios & kinematics
+    const ratio = front/rear;
+    const wheelRpm = visRpm * ratio;
+    const speed_mps = (wheelRpm/60) * circ;
+    const mph = speed_mps * MPH_PER_MPS;
+
+    // Draw arrows to indicate angular speed
+    function arrowCircle(x,y,r,revPerMin,color){
+      const omega = revPerMin; // proportional
+      const len = 9 + Math.min(20, omega*0.1);
+      ctx.strokeStyle=color; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(x,y,r+6, -Math.PI*0.2, 1.1*Math.PI); ctx.stroke();
+      // arrow head
+      const th = 1.1*Math.PI;
+      const ax = x + (r+6)*Math.cos(th), ay = y + (r+6)*Math.sin(th);
+      ctx.beginPath(); ctx.moveTo(ax, ay);
+      ctx.lineTo(ax - len, ay - 4);
+      ctx.lineTo(ax - len, ay + 4);
+      ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    }
+    arrowCircle(leftX, centerY, rFront, visRpm, '#4da3ff');
+    arrowCircle(midX, centerY, rRear, visRpm*ratio, '#ffb84d');
+    arrowCircle(wheelX, centerY, rWheel, visRpm*ratio, '#7dffb0');
+
+    // Labels
+    ctx.fillStyle='#a9b7c6'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(`${front}T ring`, leftX, centerY - rFront - 12);
+    ctx.fillText(`${rear}T cog`, midX, centerY - rRear - 12);
+    ctx.fillText(`Wheel`, wheelX, centerY - rWheel - 12);
+
+    ctx.font='13px system-ui,sans-serif';
+    ctx.fillStyle='#cfe2ff';
+    ctx.fillText(`${visRpm.toFixed(1)} rpm`, leftX, centerY + rFront + 16);
+    ctx.fillStyle='#ffe2b5';
+    ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm`, midX, centerY + rRear + 16);
+    ctx.fillStyle='#b9ffdb';
+    ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm  •  ${mph.toFixed(2)} mph`, wheelX, centerY + rWheel + 16);
+  }
+
+  function updateGearVisualizer(rears){
+    if(!rears.length) return;
+    gearIndex = clampGear(gearIndex, rears);
+    const front=parseInt($('#frontTeeth').value,10) || 40;
+    const visRpm = parseFloat($('#visRpmNum').value)||1;
+    const rear = rears[gearIndex];
+    const ratio = front / rear;
+    const circ=getCirc();
+    const wheel_rpm = ratio * visRpm;
+    const speed_mps = (wheel_rpm/60) * circ;
+    const mph = speed_mps * MPH_PER_MPS;
+    $('#gv_label').textContent = `Gear ${gearIndex+1}/${rears.length} — ${front}/${rear}T`;
+    $('#gv_ratio').textContent = `ratio = front/rear = ${front}/${rear} = ${ratio.toFixed(2)}×`;
+    $('#gv_frontT').textContent = `${front}T ring`;
+    $('#gv_crank_rpm').textContent = `${visRpm.toFixed(2)} rpm`;
+    $('#gv_wheel_rpm').textContent = `${wheel_rpm.toFixed(2)} rpm`;
+    $('#gv_speed').textContent = `${mph.toFixed(2)} mph`;
+    drawGearCanvas(rears);
+  }
+
+  function compute(){
+    const circ=getCirc(), radius=circ/(2*Math.PI);
+    const front=parseInt($('#frontTeeth').value,10);
+    const rears=parseRear($('#rearCogs').value);
+
+    // Only center the selected gear on the FIRST compute. Never reset again.
+    if(firstCompute){ gearIndex = Math.max(0, Math.floor(rears.length/2)); firstCompute=false; }
+    // Clamp when cassette changes
+    gearIndex = clampGear(gearIndex, rears);
+
+    const m=parseFloat($('#mass').value), Crr=parseFloat($('#crr').value), CdA=parseFloat($('#cda').value), rho=parseFloat($('#rho').value);
+    const riderW=Math.max(0,parseFloat($('#riderW').value));
+    const Tcrank=parseFloat($('#crankTorque').value), chainEff=parseFloat($('#driveEff').value);
+    const V=parseFloat($('#voltage').value), A=parseFloat($('#current').value), motorEff=parseFloat($('#motorEff').value);
+    const maxCad=parseFloat($('#maxCadence').value);
+    const climbMph=parseFloat($('#climbMph').value);
+    const vclimb=climbMph*MPS_PER_MPH;
+
+    const mode=$('#powerMode').value;
+    let P_mech=0,P_batt=0;
+    if(mode==='va'){ P_batt=V*A; P_mech=P_batt*motorEff; } else { P_mech=Math.max(0,parseFloat($('#mechW').value)||0); P_batt=P_mech/Math.max(0.01,motorEff); }
+    P_mech += riderW;
+
+    const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+    const topFlatMph = vFlat*MPH_PER_MPS;
+
+    const labels=rears.map(t=>t+'T');
+    const speedRpm=[], torqueNm=[], gradeTorque=[], gradeActual=[];
+    const rows=[];
+
+    const reqN_power = (P_mech/vclimb) - 0.5*rho*CdA*vclimb*vclimb;
+    const gPower = (reqN_power/(m*g)) - Crr;
+    const gPowerPct = Math.max(0, gPower*100);
+
+    rears.forEach(rear=>{
+      const ratio=front/rear;
+      const speed_mps = maxCad*ratio*circ/60;
+      const mph = speed_mps*MPH_PER_MPS;
+      const Tw = Tcrank*(rear/front)*chainEff;
+      const thrust = Tw / radius;
+      const gTorque = ((thrust - 0.5*rho*CdA*vclimb*vclimb)/(m*g)) - Crr;
+      const gTorquePct = Math.max(0,gTorque*100);
+      const gActualPct = Math.max(0, Math.min(gTorquePct, gPowerPct));
+
+      rows.push({gear:`${front}/${rear}`, ratio:(front/rear).toFixed(2), top:mph.toFixed(1), tw:Tw.toFixed(1),
+                 gt:gTorquePct.toFixed(1)+'%', ga:gActualPct.toFixed(1)+'%'});
+
+      speedRpm.push(mph); torqueNm.push(Tw); gradeTorque.push(gTorquePct); gradeActual.push(gActualPct);
+    });
+
+    const topRear = rears[0]||13;
+    const topGearRpmMph = (maxCad*(front/topRear)*circ/60)*MPH_PER_MPS;
+    const overallTop = Math.min(topGearRpmMph, topFlatMph);
+
+    $('#summary').innerHTML = `
+      <div><span class="badge">Wheel</span> circumference ≈ <b>${(circ*1000).toFixed(0)} mm</b></div>
+      <div style="margin-top:4px"><span class="badge">Power</span> mech <b>${P_mech.toFixed(0)} W</b> (incl. rider ${riderW.toFixed(0)} W) • battery draw ≈ <b>${P_batt.toFixed(0)} W</b>.</div>
+      <div style="margin-top:4px"><span class="badge">Top speed</span> flat power‑limit <b>${topFlatMph.toFixed(1)} mph</b> • top‑gear rpm‑limit <b>${topGearRpmMph.toFixed(1)} mph</b> → <b>overall ≈ ${overallTop.toFixed(1)} mph</b></div>
+      <div style="margin-top:4px"><span class="badge">Power‑limited grade @ ${climbMph.toFixed(1)} mph</span> <b>${gPowerPct.toFixed(1)}%</b> (gear‑independent)</div>
+    `;
+
+    const tbody=$('#resultTable tbody');
+    tbody.innerHTML = rows.map(r=>`<tr><td>${r.gear}</td><td>${r.ratio}</td><td>${r.top}</td><td>${r.tw}</td><td>${r.gt}</td><td>${r.ga}</td></tr>`).join('');
+
+    drawChart($('#chartSpeed'), labels, [
+      {name:'Top mph (rpm‑limited)', data:speedRpm, color:'#4da3ff'},
+      {name:'Top mph (flat, power‑limited)', data:labels.map(_=>topFlatMph), color:'#7dffb0', dashed:true, hidePoints:true}
+    ], {title:'Top Speed per Gear', formatY:v=>v.toFixed(0)+' mph'});
+
+    drawChart($('#chartTorque'), labels, [
+      {name:'Wheel torque (Nm)', data:torqueNm, color:'#ffb84d'}
+    ], {title:'Wheel Torque per Gear', formatY:v=>v.toFixed(0)+' Nm'});
+
+    drawChart($('#chartGrade'), labels, [
+      {name:'Max grade (actual @v)', data:gradeActual, color:'#7dffb0'},
+      {name:'Torque‑limited @v', data:gradeTorque, color:'#4da3ff', dashed:true},
+      {name:'Power‑limited @v (global)', data:labels.map(_=>gPowerPct), color:'#ff6b6b', dashed:true, hidePoints:true}
+    ], {title:`Max Grade at ${climbMph.toFixed(1)} mph (per gear)`, formatY:v=>v.toFixed(0)+'%'});
+
+    drawSlopeVisual($('#chartSlope'), labels, gradeActual);
+
+    updateGearVisualizer(rears);
+  }
+
+  function resetDefaults(){
+    $('#wheelPreset').value='2100'; $('#circumference').value='';
+    $('#frontTeeth').value=40; $('#rearCogs').value='13,14,16,18,21,24,28,34';
+    $('#mass').value=160; $('#crr').value=0.006; $('#cda').value=0.60; $('#rho').value=1.20;
+    $('#riderW').value=0; $('#climbMph').value=3;
+    $('#powerMode').value='va';
+    $('#voltage').value=52; $('#current').value=30; $('#motorEff').value=0.82; $('#mechW').value=1280;
+    $('#crankTorque').value=160; $('#driveEff').value=0.95; $('#maxCadence').value=140;
+    $('#batAh').value=20; $('#usablePct').value=85; $('#rangeMph').value=20; $('#rangeGradePct').value=10;
+    $('#visRpm').value=1; $('#visRpmNum').value=1;
+    gearIndex = 0; firstCompute = true;
+  }
+
+  function solve(){
+    const circ=getCirc(), radius=circ/(2*Math.PI);
+    const m=parseFloat($('#mass').value), Crr=parseFloat($('#crr').value), CdA=parseFloat($('#cda').value), rho=parseFloat($('#rho').value);
+    const riderW=Math.max(0,parseFloat($('#riderW').value));
+    const Tcrank=parseFloat($('#crankTorque').value), eff=parseFloat($('#driveEff').value);
+    const V=parseFloat($('#voltage').value), A=parseFloat($('#current').value), motorEff=parseFloat($('#motorEff').value);
+    const maxCad=parseFloat($('#maxCadence').value);
+    const climbMph=parseFloat($('#climbMph').value), v=climbMph*MPS_PER_MPH;
+    const targetTop=parseFloat($('#targetTopMph').value), targetGrade=parseFloat($('#targetGradePct').value)/100;
+    const fixedWhat=$('#fixedWhat').value;
+    const fixedRing=parseInt($('#fixedRing').value,10);
+    const fixedSmall=parseInt($('#fixedSmall').value,10);
+    const fixedLarge=parseInt($('#fixedLarge').value,10);
+
+    const mode=$('#powerMode').value;
+    let P_mech=0;
+    if(mode==='va'){ P_mech=V*A*motorEff; } else { P_mech=Math.max(0,parseFloat($('#mechW').value)||0); }
+    P_mech += riderW;
+
+    const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+    const topFlatMph = vFlat*MPH_PER_MPS;
+    const needTopMps = targetTop * MPS_PER_MPH;
+    const ratioReq = needTopMps*60/(maxCad*circ);
+    const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
+
+    function pickSmall(front){
+      const maxSmall = Math.floor(front/ratioReq);
+      const cand = stdSmall.filter(s=>s<=maxSmall);
+      return cand.length? Math.max(...cand) : null;
+    }
+    function pickLarge(front){
+      const rearNeeded = Math.ceil(front * Tw_req/(Tcrank*eff));
+      const cand = stdLarge.filter(L=>L>=rearNeeded);
+      return cand.length? Math.min(...cand) : null;
+    }
+
+    let report='';
+    if(topFlatMph < targetTop){ report += `<div class="no">Flat power‑limited top speed is ${topFlatMph.toFixed(1)} mph, below target ${targetTop.toFixed(1)} mph.</div>`; }
+    const gPower = ((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr;
+    if(gPower < targetGrade){ report += `<div class="no">Power‑limited grade at ${climbMph.toFixed(1)} mph is ${(gPower*100).toFixed(1)}%, below target ${(targetGrade*100).toFixed(1)}%.</div>`; }
+    if(!report) report = `<div class="ok">Targets look power‑feasible. Now checking gearing…</div>`;
+
+    let suggestion='';
+    if(fixedWhat==='none'){
+      let best=null;
+      stdSmall.forEach(s=>{
+        const ring = Math.ceil(ratioReq*s);
+        const L = pickLarge(ring);
+        if(L){ if(!best || ring<best.ring) best={ring,s,L}; }
+      });
+      suggestion = best
+        ? `Suggested: <b>${best.ring}T</b> ring with cassette <b>${best.s}–${best.L}T</b>.`
+        : `No standard combo (11–14T top, 26–50T low) meets both targets; raise rpm/power or relax targets.`;
+    } else if(fixedWhat==='ring'){
+      const s = pickSmall(fixedRing);
+      const L = pickLarge(fixedRing);
+      if(s && L) suggestion = `With a fixed <b>${fixedRing}T</b> ring, use cassette about <b>${s}–${L}T</b>.`;
+      else if(!s && L) suggestion = `Top‑speed target demands a smaller top cog than standard allows for a ${fixedRing}T ring. Increase ring size or rpm.`;
+      else if(s && !L) suggestion = `Climb target needs a larger low cog (≥${Math.ceil(fixedRing*Tw_req/(Tcrank*eff))}T). Consider 40–50T low or a smaller ring.`;
+      else suggestion = `Both targets conflict for a ${fixedRing}T ring. Raise rpm/power or adjust targets.`;
+    } else {
+      const frontMin = Math.ceil(ratioReq*fixedSmall);
+      const frontMax = Math.floor( (fixedLarge*Tcrank*eff)/Tw_req );
+      if(frontMin <= frontMax){
+        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b>, pick a ring around <b>${frontMin}T</b> (any in <b>${frontMin}–${frontMax}T</b> works).`;
+      } else {
+        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b> there's no ring that hits both targets. Increase low cog to ≥<b>${Math.ceil(frontMin*Tw_req/(Tcrank*eff))}T</b> or raise rpm/power.`;
+      }
+    }
+
+    $('#solveOut').innerHTML = report + `<div style="margin-top:6px">${suggestion}</div>`;
+  }
+
+  function rand(min,max){ return min + Math.random()*(max-min); }
+  function percentile(arr,p){
+    if(arr.length===0) return NaN;
+    const a=arr.slice().sort((x,y)=>x-y);
+    const idx=Math.min(a.length-1, Math.max(0, Math.floor((p/100)*(a.length-1))));
+    return a[idx];
+  }
+
+  function runUncertainty(){
+    const N = Math.max(10, parseInt($('#N').value,10)||300);
+    const circ=getCirc(), radius=circ/(2*Math.PI);
+    const front=parseInt($('#frontTeeth').value,10);
+    const climbMph=parseFloat($('#climbMph').value), v=climbMph*MPS_PER_MPH;
+    const targetTop=parseFloat($('#targetTopMph').value), targetGrade=parseFloat($('#targetGradePct').value)/100;
+    const fixedWhat=$('#fixedWhat').value;
+    const fixedRing=parseInt($('#fixedRing').value,10);
+    const fixedSmall=parseInt($('#fixedSmall').value,10);
+    const fixedLarge=parseInt($('#fixedLarge').value,10);
+    const mode=$('#powerMode').value;
+    const chainEff=parseFloat($('#driveEff').value);
+    const rears=parseRear($('#rearCogs').value);
+
+    const mMin=parseFloat($('#u_mass_min').value), mMax=parseFloat($('#u_mass_max').value);
+    const rpmMin=parseFloat($('#u_rpm_min').value), rpmMax=parseFloat($('#u_rpm_max').value);
+    const Vmin=parseFloat($('#u_V_min').value), Vmax=parseFloat($('#u_V_max').value);
+    const Amin=parseFloat($('#u_A_min').value), Amax=parseFloat($('#u_A_max').value);
+    const effMin=parseFloat($('#u_eff_min').value), effMax=parseFloat($('#u_eff_max').value);
+    const TMin=parseFloat($('#u_T_min').value), TMax=parseFloat($('#u_T_max').value);
+    const RWmin=parseFloat($('#u_RW_min').value), RWmax=parseFloat($('#u_RW_max').value);
+    const CrrMin=parseFloat($('#u_Crr_min').value), CrrMax=parseFloat($('#u_Crr_max').value);
+    const CdAMin=parseFloat($('#u_CdA_min').value), CdAMax=parseFloat($('#u_CdA_max').value);
+    const mechW_base=parseFloat($('#mechW').value);
+
+    let feasible=0, powerTopFails=0, powerClimbFails=0, gearTopFails=0, gearClimbFails=0;
+    const reqRingList=[], reqSmallList=[], reqLargeList=[];
+
+    for(let i=0;i<N;i++){
+      const m=rand(mMin,mMax), Crr=rand(CrrMin,CrrMax), CdA=rand(CdAMin,CdAMax), rho=parseFloat($('#rho').value);
+      const RW=rand(RWmin,RWmax);
+      const rpm=rand(rpmMin,rpmMax);
+      const V=mode==='va'?rand(Vmin,Vmax):parseFloat($('#voltage').value);
+      const A=mode==='va'?rand(Amin,Amax):parseFloat($('#current').value);
+      const eff=mode==='va'?rand(effMin,effMax):parseFloat($('#motorEff').value);
+      const Tcrank=rand(TMin,TMax);
+      const P_mech = (mode==='va' ? (V*A*eff) : mechW_base) + RW;
+
+      const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+      const topFlatMph = vFlat*MPH_PER_MPS;
+      const needTopMps = targetTop * MPS_PER_MPH;
+      const ratioReq = needTopMps*60/(rpm*circ);
+      const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
+
+      let powerOK = (topFlatMph >= targetTop) && ((((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr) >= targetGrade);
+      if(!powerOK){
+        if(topFlatMph < targetTop) powerTopFails++; else powerClimbFails++;
+      }
+
+      let gearOK=false, needRing=null, needSmall=null, needLarge=null;
+
+      function needLargeFor(frontTeeth){ return Math.ceil(frontTeeth * Tw_req/(Tcrank*chainEff)); }
+
+      if(fixedWhat==='none'){
+        let best=null;
+        stdSmall.forEach(s=>{
+          const ring = Math.ceil(ratioReq*s);
+          const Lneed = needLargeFor(ring);
+          const L = stdLarge.find(x=>x>=Lneed);
+          if(L){ const cand={ring,s,L}; if(!best || ring<best.ring) best=cand; }
+        });
+        if(best){ gearOK=true; needRing=best.ring; needSmall=best.s; needLarge=best.L; }
+      } else if(fixedWhat==='ring'){
+        const maxSmall = Math.floor(fixedRing/ratioReq);
+        const s = stdSmall.filter(x=>x<=maxSmall).slice(-1)[0];
+        const Lneed = needLargeFor(fixedRing);
+        const L = stdLarge.find(x=>x>=Lneed);
+        if(s && L){ gearOK=true; needRing=fixedRing; needSmall=s; needLarge=L; }
+      } else {
+        const ringMin = Math.ceil(ratioReq*fixedSmall);
+        const ringMax = Math.floor( (fixedLarge*chainEff)/ (Tw_req/ (Tcrank)) );
+        if(ringMin<=ringMax){ gearOK=true; needRing=ringMin; needSmall=fixedSmall; needLarge=fixedLarge; }
+      }
+
+      if(!gearOK){ if(topFlatMph >= targetTop) gearTopFails++; else gearClimbFails++; }
+
+      if(powerOK && gearOK){
+        feasible++;
+        reqRingList.push(needRing);
+        reqSmallList.push(needSmall);
+        reqLargeList.push(needLarge);
+      }
+    }
+
+    const cov = feasible/N*100;
+    const ringP95 = Math.ceil(percentile(reqRingList,95));
+    const ringP100 = Math.ceil(percentile(reqRingList,100));
+    const smallMax = reqSmallList.length? Math.max(...reqSmallList) : NaN;
+    const largeP95 = percentile(reqLargeList,95);
+    const largeP100 = percentile(reqLargeList,100);
+
+    let txt = `<div><span class="badge">Coverage</span> ${cov.toFixed(1)}% of ${N} scenarios meet both power & gearing with your constraints.</div>`;
+    if(N-feasible>0){
+      txt += `<div style="margin-top:4px"><span class="badge">Why failures?</span> power(flat top) ${powerTopFails}, power(climb) ${powerClimbFails}, gearing limits ${gearTopFails+gearClimbFails}.</div>`;
+    }
+
+    if(reqRingList.length>0){
+      txt += `<div style="margin-top:6px"><span class="badge">95% design</span> choose ring ≈ <b>${ringP95}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP95}T</b>.</div>`;
+      txt += `<div style="margin-top:4px"><span class="badge">100% design</span> ring ≈ <b>${ringP100}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP100}T</b>.</div>`;
+      txt += `<div class="note" style="margin-top:4px">Pick the nearest real parts: small from [11,12,13,14] and low from [26,28,30,32,34,36,40,42,46,50].</div>`;
+    }else{
+      txt += `<div class="no" style="margin-top:6px">No scenario satisfied both power and gearing with the current constraints. Consider raising rpm/power or relaxing targets.</div>`;
+    }
+
+    $('#uncOut').innerHTML = txt;
+  }
+
+  $('#computeBtn').addEventListener('click', compute);
+  $('#resetBtn').addEventListener('click', ()=>{ resetDefaults(); compute(); });
+  $$('.pill[data-rear]').forEach(btn=> btn.addEventListener('click', ()=>{ $('#rearCogs').value=btn.getAttribute('data-rear'); compute(); }));
+  $('#preset_power').addEventListener('click', ()=>{ $('#powerMode').value='va'; $('#voltage').value=52; $('#current').value=30; $('#motorEff').value=0.82; compute(); });
+  $('#preset_rpm').addEventListener('click', ()=>{ $('#maxCadence').value=150; compute(); });
+  $('#solveBtn').addEventListener('click', solve);
+  $('#uncBtn').addEventListener('click', runUncertainty);
+  window.addEventListener('resize', ()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>{ drawGearCanvas(parseRear($('#rearCogs').value)); compute(); },120); });
+
+  // Gear controls
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowUp'){ gearIndex++; compute(); }
+    if(e.key==='ArrowDown'){ gearIndex--; compute(); }
+  });
+  $('#gearUp').addEventListener('click', ()=>{ gearIndex++; compute(); });
+  $('#gearDown').addEventListener('click', ()=>{ gearIndex--; compute(); });
+
+  // Visualizer RPM controls
+  $('#visRpm').addEventListener('input', ()=>{ $('#visRpmNum').value = $('#visRpm').value; updateGearVisualizer(parseRear($('#rearCogs').value)); });
+  $('#visRpmNum').addEventListener('input', ()=>{ let v=parseFloat($('#visRpmNum').value)||0; v=Math.max(0,Math.min(300,v)); $('#visRpm').value=v; updateGearVisualizer(parseRear($('#rearCogs').value)); });
+
+  resetDefaults(); compute();
+})();
+</script>
+</body>
+</html>
