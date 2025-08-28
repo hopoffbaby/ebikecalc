@@ -5,54 +5,133 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mid-Drive Planner v10 — Gearing • Grades • Range • Uncertainty • Gear Visualizer</title>
 <style>
-  :root{--bg:#0b0f14;--panel:#121821;--ink:#e8eef6;--muted:#a9b7c6;--accent:#4da3ff;--accent2:#7dffb0;--warn:#ffb84d;--danger:#ff6b6b;--grid:#233040}
+  :root{
+    --bg:#070b10;--panel:#0f1622;--ink:#e8eef6;--muted:#a9b7c6;
+    --accent:#4da3ff;--accent2:#7dffb0;--warn:#ffb84d;--danger:#ff6b6b;--grid:#233040;
+    --glow1:#3ea1ff;--glow2:#80ffcf
+  }
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  header{padding:14px 16px;border-bottom:1px solid #182232;background:linear-gradient(180deg,#0c121a,#0a0f15);position:sticky;top:0;z-index:5}
-  h1{font-size:18px;margin:0 0 4px 0}
+
+  /* Neon background (static, no panning/animation) */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;opacity:.35;
+    background:
+      radial-gradient(80vmax 80vmax at 20% 10%, #143055 0%, transparent 55%),
+      radial-gradient(80vmax 80vmax at 80% 80%, #0d3a2c 0%, transparent 55%),
+      repeating-linear-gradient(0deg, #0b1320 0 2px, #0b1320 2px 20px, #0c1624 20px 40px);
+    mix-blend-mode:screen;
+  }
+  /* Remove scanline overlay entirely */
+  body::after{display:none!important}
+
+  header{
+    padding:14px 16px;border-bottom:1px solid #182232;
+    background:linear-gradient(180deg,#0c121a,#0a0f15);
+    position:sticky;top:0;z-index:5
+  }
+  h1{font-size:18px;margin:0 0 4px 0;
+    background:linear-gradient(90deg,#cfe2ff,#b9ffdb);
+    -webkit-background-clip:text;background-clip:text;color:transparent
+  }
   .sub{color:var(--muted);font-size:12px}
   main{padding:12px;max-width:1200px;margin:0 auto}
   .grid{display:grid;gap:12px}
   @media(min-width:1020px){.grid{grid-template-columns:440px 1fr}}
-  .card{background:var(--panel);border:1px solid #182232;border-radius:12px;padding:12px}
+  .card{
+    background:rgba(18,24,33,.88);
+    border:1px solid #182232;border-radius:14px;padding:12px;
+    box-shadow:0 10px 30px #00000066, inset 0 1px 0 #ffffff08;
+    transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease
+  }
+  .card:hover{transform:translateY(-2px); box-shadow:0 16px 46px #00000080, 0 0 0 1px #3aa1ff20}
   .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .inputs .full{grid-column:1/-1}
-  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
-  input,select,button{width:100%;box-sizing:border-box;border-radius:8px;border:1px solid #223044;background:#0d131b;color:var(--ink);padding:10px 12px;font-size:14px;outline:none}
+  label{
+    font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:4px
+  }
+  input,select,button{
+    width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #223044;background:#0d131b;
+    color:var(--ink);padding:10px 12px;font-size:14px;outline:none
+  }
   input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #4da3ff22}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .btn{background:var(--accent);color:#001b33;border:none;font-weight:600;cursor:pointer}
-  .btn[disabled]{opacity:0.5;cursor:not-allowed}
-  .btn.secondary{background:#192434;color:var(--ink);border:1px solid #223044}
+  .btn{
+    position:relative;background:linear-gradient(180deg,#49a0ff,#2a6fbf);color:#001b33;border:none;font-weight:700;cursor:pointer
+  }
+  .btn.secondary{background:linear-gradient(180deg,#14202f,#0f1a29);color:var(--ink);border:1px solid #223044}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  /* Kill glossy sideways sheen */
+  .btn::after{content:none!important}
+
   .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#162131;border:1px solid #223044;color:var(--ink);font-size:12px;cursor:pointer}
   .section-title{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:4px 0 8px;display:flex;align-items:center;gap:6px}
-  canvas{width:100%;height:260px;border-radius:10px;background:#0c121a;border:1px solid #182232}
+  canvas{width:100%;height:260px;border-radius:12px;background:#0b1118;border:1px solid #182232;box-shadow:inset 0 0 0 1px #ffffff08}
   table{width:100%;border-collapse:collapse;font-size:12px}
   th,td{padding:6px 8px;border-bottom:1px solid #1a2634;text-align:right}
   th{color:var(--muted);font-weight:600}
   td:first-child,th:first-child{text-align:left}
-  tbody tr.sel{background:#0f1622}
+  tbody tr.sel{background:linear-gradient(90deg,#0f1622,#0e1f31)}
+  tbody tr.sel td{box-shadow:inset 0 0 0 1px #3ea1ff22}
   tbody tr:hover{background:#101a28}
   .note{color:var(--muted);font-size:12px;line-height:1.45}
-  .badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#1b2838;color:var(--ink);font-size:11px;border:1px solid #223044}
+  .badge{display:inline-block;padding:2px 6px;border-radius:6px;background:#1b2838;color:var(--ink);font-size:11px;border:1px solid #223044;box-shadow:0 0 0 1px #ffffff08}
   .ok{color:#7dffb0}.no{color:#ff6b6b}
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   #gearVis{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
-  #gearVis .col{background:#0c121a;border:1px solid #182232;border-radius:10px;padding:8px;text-align:center}
+  #gearVis .col{background:#0c121a;border:1px solid #182232;border-radius:10px;padding:8px;text-align:center;box-shadow:inset 0 0 0 1px #ffffff08}
   #gearVis .val{font-size:18px;font-weight:700}
   #gearControls{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px}
   #gearControls button{width:auto;min-width:44px}
-  #gearCanvas{height:220px}
+  #gearCanvas{height:260px}
   .narrow{max-width:520px}
-  .muted{color:var(--muted)}
-  .spacer{height:6px}
-  .nowrap{white-space:nowrap}
-  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-  .small{font-size:11px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .small{font-size:11px}.muted{color:var(--muted)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .toolbar .group{display:flex;gap:6px;align-items:center}
   .toolbar .seg{display:inline-flex;border:1px solid #223044;border-radius:8px;overflow:hidden}
-  .toolbar .seg button{border:none;background:#14202f;padding:6px 10px;font-size:12px;cursor:pointer}
-  .toolbar .seg button.active{background:#1e2c40;color:#cfe2ff}
+  .toolbar .seg button{border:none;background:#14202f;padding:6px 10px;font-size:12px;cursor:pointer;color:#cfe2ff}
+  .toolbar .seg button.active{background:#1e2c40;color:#b9ffdb}
+
+  /* Respect reduced motion for canvas animation only */
+  @media (prefers-reduced-motion: reduce){
+    /* canvas animation controlled in JS; no CSS motion left */
+  }
+
+  /* ---------- Tooltip system (desktop + mobile) ---------- */
+  .help-icon{
+    --size:18px;
+    width:var(--size);height:var(--size);
+    border-radius:50%;
+    border:1px solid #2a3b55;
+    background:radial-gradient(circle at 30% 30%, #234064, #0e1723);
+    color:#cfe2ff;font-weight:800;font-size:12px;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;
+    cursor:help; position:relative; flex:0 0 auto;
+  }
+  .help-icon:focus-visible{outline:2px solid #4da3ff66;outline-offset:2px}
+  .tip-bubble{
+    position:absolute;left:50%;bottom:calc(100% + 8px);
+    transform:translateX(-50%) translateY(6px) scale(.98);
+    background:#0d1623;border:1px solid #243248;border-radius:10px;box-shadow:0 10px 30px #00000066, 0 0 0 1px #ffffff08;
+    padding:10px; width:min(260px, 82vw); color:#e8eef6; font-size:12px; line-height:1.45; z-index:50;
+    opacity:0; pointer-events:none; transition:opacity .15s ease, transform .15s ease;
+  }
+  .tip-bubble .tip-title{display:block;font-weight:700;color:#b9ffdb;margin-bottom:4px}
+  .tip-bubble::after{
+    content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
+    border-width:8px;border-style:solid;border-color:#0d1623 transparent transparent transparent;
+    filter:drop-shadow(0 2px 0 #243248);
+  }
+  /* Show on hover/focus or when toggled open via JS */
+  .help-icon:hover .tip-bubble,
+  .help-icon:focus .tip-bubble,
+  .help-icon.open .tip-bubble{
+    opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) scale(1);
+  }
+  /* Tooltip inside headers with less vertical space: push below if needed */
+  .tip-below .tip-bubble{ top:calc(100% + 8px); bottom:auto }
+  .tip-below .tip-bubble::after{
+    top:auto; bottom:100%; transform:translateX(-50%) rotate(180deg)
+  }
 </style>
 </head>
 <body>
@@ -60,41 +139,40 @@
   <div class="toolbar">
     <h1 style="margin-right:auto">Mid-Drive Planner v10</h1>
     <div class="group">
-      <span class="small muted">Speed units</span>
+      <span class="small muted">Speed</span>
       <div class="seg" role="tablist" aria-label="Speed units">
         <button type="button" id="u_mph" class="active" aria-selected="true">mph</button>
         <button type="button" id="u_kph" aria-selected="false">km/h</button>
       </div>
     </div>
+    <div class="group">
+      <span class="small muted">FX</span>
+      <div class="seg" role="tablist" aria-label="Visual effects">
+        <button type="button" id="fx_on" class="active" aria-selected="true">On</button>
+        <button type="button" id="fx_off" aria-selected="false">Off</button>
+      </div>
+      <button id="fx_play" class="btn secondary" type="button" style="min-width:88px">Pause</button>
+    </div>
   </div>
-  <div class="sub">Fixed gear selector; added cog+wheel drawing and adjustable visualizer rpm. + live compute, range engine, presets & share, CSV export.</div>
+  <div class="sub">No distracting sweeps. Animated sprockets & chain remain. Tap the “?” icons for inline help (works on mobile).</div>
 </header>
 
 <main class="grid">
+  <!-- LEFT PANEL -->
   <section class="card">
     <div class="section-title">Bike & Drivetrain</div>
     <div class="inputs">
-      <div>
-        <label for="wheelPreset">Wheel size preset</label>
-        <select id="wheelPreset" title="Pick a typical wheel. Or choose Custom and type the measured tyre circumference.">
+      <div><label for="wheelPreset">Wheel size preset</label>
+        <select id="wheelPreset">
           <option value="2100">26″ (≈2100 mm)</option>
           <option value="2230">27.5″ (≈2230 mm)</option>
           <option value="2310">29″ / 700c (≈2310 mm)</option>
           <option value="custom">Use custom circumference</option>
         </select>
       </div>
-      <div>
-        <label for="circumference">Custom circumference (mm)</label>
-        <input id="circumference" type="number" placeholder="e.g. 2100" min="1" step="1">
-      </div>
-      <div>
-        <label for="frontTeeth">Front chainring teeth</label>
-        <input id="frontTeeth" type="number" value="40" min="22" max="60" step="1">
-      </div>
-      <div>
-        <label for="rearCogs">Rear cogs (teeth, CSV)</label>
-        <input id="rearCogs" class="full" type="text" value="13,14,16,18,21,24,28,34">
-      </div>
+      <div><label for="circumference">Custom circumference (mm)</label><input id="circumference" type="number" placeholder="e.g. 2100" min="1" step="1"></div>
+      <div><label for="frontTeeth">Front chainring teeth</label><input id="frontTeeth" type="number" value="40" min="22" max="60" step="1"></div>
+      <div><label for="rearCogs">Rear cogs (teeth, CSV)</label><input id="rearCogs" class="full" type="text" value="13,14,16,18,21,24,28,34" inputmode="numeric"></div>
     </div>
 
     <div class="section-title">Rider & Physics</div>
@@ -109,8 +187,7 @@
 
     <div class="section-title">Motor & Power</div>
     <div class="inputs">
-      <div class="full">
-        <label for="powerMode">Power entry mode</label>
+      <div class="full"><label for="powerMode">Power entry mode</label>
         <select id="powerMode">
           <option value="va">Voltage × Current × Efficiency (battery-based)</option>
           <option value="mech">Direct mechanical watts (at the shaft)</option>
@@ -142,12 +219,12 @@
       <button class="pill" id="preset_rpm">Spec: 150 rpm</button>
     </div>
     <div class="row" style="margin-top:6px">
-      <input id="presetName" placeholder="Preset name" style="max-width:220px">
+      <input id="presetName" placeholder="Preset name" style="max-width:220px" aria-label="Preset name">
       <button id="savePreset" class="btn secondary" type="button">Save</button>
       <select id="loadPreset" style="max-width:220px"><option value="">Load preset…</option></select>
       <button id="deletePreset" class="btn secondary" type="button">Delete</button>
       <button id="shareBtn" class="btn" type="button">Share</button>
-      <span id="shareMsg" class="small muted"></span>
+      <span id="shareMsg" class="small muted" role="status" aria-live="polite"></span>
     </div>
 
     <div class="row" style="margin-top:10px">
@@ -157,6 +234,7 @@
     </div>
   </section>
 
+  <!-- RIGHT PANEL -->
   <section class="card">
     <div class="section-title">Global summary</div>
     <div id="summary" class="note" role="status" aria-live="polite"></div>
@@ -200,7 +278,7 @@
         <div class="note" id="gv_speed">—</div>
       </div>
     </div>
-    <canvas id="gearCanvas" role="img" aria-label="Schematic of chainring, rear cog, and wheel with relative RPM"></canvas>
+    <canvas id="gearCanvas" role="img" aria-label="Animated chainring, cog and wheel with chain motion"></canvas>
 
     <div class="section-title" style="margin-top:12px">Per-gear results</div>
     <div class="note" style="margin-bottom:6px">
@@ -229,13 +307,13 @@
     </div>
   </section>
 
+  <!-- Reverse engineer -->
   <section class="card">
     <div class="section-title">Reverse engineer gearing</div>
     <div class="inputs">
       <div><label for="targetTopMph"><span id="lbl_targetTop">Target top speed (mph)</span></label><input id="targetTopMph" type="number" value="29" min="0" step="0.1"></div>
       <div><label for="targetGradePct">Target climb grade (%)</label><input id="targetGradePct" type="number" value="15" min="0" step="0.1"></div>
-      <div class="full">
-        <label for="fixedWhat">What is fixed?</label>
+      <div class="full"><label for="fixedWhat">What is fixed?</label>
         <select id="fixedWhat">
           <option value="none">Nothing (suggest both)</option>
           <option value="ring">Chainring is fixed</option>
@@ -250,6 +328,7 @@
     <div id="solveOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
   </section>
 
+  <!-- Uncertainty -->
   <section class="card">
     <div class="section-title">Uncertainty sweeps (multi-scenario)</div>
     <div class="inputs">
@@ -279,6 +358,7 @@
 </main>
 
 <script>
+/* ====== Core constants + existing compute/render engine (kept) ====== */
 (function(){
   const g = 9.80665;
   const MPH_PER_MPS = 2.23693629;
@@ -294,7 +374,12 @@
   let firstCompute = true;
   let speedUnit = 'mph'; // 'mph' | 'kph'
 
-  // ---------- helpers ----------
+  // FX state (canvas animation only)
+  const prefersReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let fxEnabled = !prefersReduce;
+  let animRunning = !prefersReduce;
+
+  /* ---------- helpers ---------- */
   function parseRear(csv){
     const set = new Set();
     csv.split(',').forEach(s=>{
@@ -340,7 +425,7 @@
   function clampGear(n, rears){ return Math.max(0, Math.min(n, rears.length-1)); }
   function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
 
-  // ---------- drawing ----------
+  /* ---------- charts & slope ---------- */
   function drawChart(canvas, labels, series, options){
     const dpr=Math.max(1,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
     canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
@@ -396,71 +481,159 @@
       ctx.fillStyle='#7dffb0'; ctx.fillText(`${pct.toFixed(0)}%`, cx, h - 10);
     }
   }
+
+  /* ---------- Sexy Gear Canvas Animation ---------- */
+  let animId = null, lastT = 0, angFront = 0, angRear = 0, angWheel = 0, chainOffset = 0;
+
+  function drawSprocket(ctx, x, y, baseR, teeth, angle, color){
+    const toothH = 6, innerR = baseR-4, outerR = baseR+toothH;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(angle);
+    ctx.lineWidth=2;
+    ctx.shadowColor=color; ctx.shadowBlur=10;
+    ctx.strokeStyle=color;
+    ctx.beginPath(); ctx.arc(0,0,baseR,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = color; ctx.globalAlpha=0.85;
+    for(let i=0;i<teeth;i++){
+      const a = i*2*Math.PI/teeth;
+      const w = Math.max(4, (2*Math.PI*baseR/teeth)*0.25);
+      ctx.save(); ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(innerR, -w*0.5);
+      ctx.lineTo(outerR, -w*0.3);
+      ctx.lineTo(outerR,  w*0.3);
+      ctx.lineTo(innerR,  w*0.5);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(0,0,innerR,0,Math.PI*2); ctx.strokeStyle="#1b2a40"; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawWheel(ctx,x,y,r,angle){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
+    ctx.shadowColor= "#7dffb0"; ctx.shadowBlur=10;
+    ctx.strokeStyle="#7dffb0"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
+    const spokeN=16;
+    ctx.lineWidth=1.2; ctx.strokeStyle="#aefcd2";
+    for(let i=0;i<spokeN;i++){
+      const a = i*2*Math.PI/spokeN;
+      const x1 = r*0.1*Math.cos(a+Math.PI/8), y1 = r*0.1*Math.sin(a+Math.PI/8);
+      const x2 = r*Math.cos(a), y2 = r*Math.sin(a);
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+    ctx.fillStyle="#0e1a28"; ctx.beginPath(); ctx.arc(0,0,r*0.12,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawChain(ctx, path, linkSpacing, offset, color){
+    ctx.save();
+    ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=6;
+    const totalLen = path.reduce((s,seg)=>s+Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1),0);
+    let s0 = (-offset % linkSpacing + linkSpacing) % linkSpacing;
+    for(let s=s0; s<totalLen; s+=linkSpacing){
+      let d = s;
+      for(const seg of path){
+        const L = Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1);
+        if(d<=L){
+          const t = d/L;
+          const x = seg.x1 + (seg.x2-seg.x1)*t;
+          const y = seg.y1 + (seg.y2-seg.y1)*t;
+          const ang = Math.atan2(seg.y2-seg.y1, seg.x2-seg.x1);
+          const w=10, h=3;
+          ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+          ctx.globalAlpha=0.95; ctx.fillRect(-w/2,-h/2,w,h);
+          ctx.restore();
+          break;
+        } else { d-=L; }
+      }
+    }
+    ctx.restore();
+  }
+
   function drawGearCanvas(rears){
     const canvas = $('#gearCanvas');
     const dpr = Math.max(1, window.devicePixelRatio||1);
     const w = canvas.clientWidth, h = canvas.clientHeight;
     canvas.width = Math.round(w*dpr); canvas.height = Math.round(h*dpr);
-    const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
 
     if(!rears.length) return;
-    const front = parseInt($('#frontTeeth').value,10)||40;
-    const rear = rears[gearIndex];
-    const circ = getCirc();
-    const visRpm = parseFloat($('#visRpmNum').value)||1;
+    const frontT = parseInt($('#frontTeeth').value,10)||40;
+    const rearT  = rears[gearIndex];
+    const circ   = getCirc();
+    const visRpm = Math.max(0, parseFloat($('#visRpmNum').value)||1);
 
-    const pad = {l:16, r:16, t:12, b:20};
-    const leftX = pad.l + 60;
-    const midX = w/2 + 20;
-    const wheelX = w - 120;
-    const centerY = h/2 + 10;
+    const pad = {l:24, r:24, t:20, b:20};
+    const leftX = pad.l + 70;
+    const midX = w/2 + 30;
+    const wheelX = w - 140;
+    const centerY = h/2 + 8;
 
-    const scale = 2.2;
-    const rFront = Math.max(18, Math.sqrt(front)*scale);
-    const rRear  = Math.max(10, Math.sqrt(rear)*scale);
-    const rWheel = Math.min(90, Math.max(60, (circ/(2*Math.PI))*35)); // stylized
+    const rFront = Math.max(20, Math.sqrt(frontT)*2.4);
+    const rRear  = Math.max(12, Math.sqrt(rearT)*2.3);
+    const rWheel = Math.min(100, Math.max(70, (circ/(2*Math.PI))*36));
 
-    ctx.lineWidth=2;
-    function ring(x,y,r,color){ ctx.strokeStyle=color; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke(); }
-    ring(leftX, centerY, rFront, '#4da3ff');
-    ring(midX,  centerY, rRear,  '#ffb84d');
-    ring(wheelX,centerY, rWheel, '#7dffb0');
+    const dy = 10;
+    const top = [
+      {x1:leftX + rFront, y1:centerY - dy, x2:midX - rRear, y2:centerY - dy},
+      {x1:midX - rRear,   y1:centerY - dy, x2:midX - rRear, y2:centerY - dy}
+    ];
+    const bottom = [{x1:midX - rRear, y1:centerY + dy, x2:leftX + rFront, y2:centerY + dy}];
 
-    ctx.strokeStyle='#2a3c54'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(leftX + rFront, centerY); ctx.lineTo(midX - rRear, centerY); ctx.stroke();
-
-    const ratio = front/rear;
+    const ratio   = frontT/rearT;
     const wheelRpm = visRpm * ratio;
-    const speed_mps = (wheelRpm/60) * circ;
-    const speed_disp = mpsToDisplay(speed_mps);
 
-    function arrowCircle(x,y,r,revPerMin,color){
-      const len = 9 + Math.min(20, revPerMin*0.1);
-      ctx.strokeStyle=color; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.arc(x,y,r+6, -Math.PI*0.2, 1.1*Math.PI); ctx.stroke();
-      const th = 1.1*Math.PI;
-      const ax = x + (r+6)*Math.cos(th), ay = y + (r+6)*Math.sin(th);
-      ctx.beginPath(); ctx.moveTo(ax, ay);
-      ctx.lineTo(ax - len, ay - 4);
-      ctx.lineTo(ax - len, ay + 4);
-      ctx.closePath(); ctx.fillStyle=color; ctx.fill();
-    }
-    arrowCircle(leftX, centerY, rFront, visRpm, '#4da3ff');
-    arrowCircle(midX,  centerY, rRear,  visRpm*ratio, '#ffb84d');
-    arrowCircle(wheelX,centerY, rWheel, visRpm*ratio, '#7dffb0');
+    drawSprocket(ctx,leftX, centerY, rFront, frontT, angFront, "#4da3ff");
+    drawSprocket(ctx, midX,  centerY, rRear,  rearT,  angRear,  "#ffb84d");
+    drawWheel   (ctx, wheelX,centerY, rWheel, angWheel);
+
+    drawChain(ctx, top,    16, chainOffset, "#8fd0ff");
+    drawChain(ctx, bottom, 16, chainOffset - (top.reduce((s,seg)=>s+Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1),0)), "#8fd0ff");
 
     ctx.fillStyle='#a9b7c6'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(`${front}T ring`, leftX, centerY - rFront - 12);
-    ctx.fillText(`${rear}T cog`,  midX,  centerY - rRear  - 12);
-    ctx.fillText(`Wheel`,        wheelX, centerY - rWheel - 12);
+    ctx.fillText(`${frontT}T ring`, leftX, centerY - rFront - 14);
+    ctx.fillText(`${rearT}T cog`,  midX,  centerY - rRear  - 14);
+    ctx.fillText(`Wheel`,         wheelX, centerY - rWheel - 14);
 
     ctx.font='13px system-ui,sans-serif';
-    ctx.fillStyle='#cfe2ff';  ctx.fillText(`${visRpm.toFixed(1)} rpm`, leftX, centerY + rFront + 16);
-    ctx.fillStyle='#ffe2b5';  ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm`, midX,  centerY + rRear  + 16);
-    ctx.fillStyle='#b9ffdb';  ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm  •  ${speed_disp.toFixed(2)} ${unitLabel()}`, wheelX, centerY + rWheel + 16);
+    ctx.fillStyle='#cfe2ff';  ctx.fillText(`${visRpm.toFixed(1)} rpm`, leftX, centerY + rFront + 18);
+    ctx.fillStyle='#ffe2b5';  ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm`, midX,  centerY + rRear  + 18);
+    const speed_mps = (wheelRpm/60) * circ;
+    const speed_disp = mpsToDisplay(speed_mps);
+    ctx.fillStyle='#b9ffdb'; ctx.fillText(`${(wheelRpm).toFixed(1)} rpm  •  ${speed_disp.toFixed(2)} ${unitLabel()}`, wheelX, centerY + rWheel + 18);
   }
 
-  // ---------- main compute ----------
+  function updateGearButtons(rears){
+    $('#gearDown').disabled = (gearIndex<=0);
+    $('#gearUp').disabled   = (gearIndex>=rears.length-1);
+  }
+
+  function updateGearVisualizer(rears){
+    if(!rears.length) return;
+    gearIndex = clampGear(gearIndex, rears);
+    const front=parseInt($('#frontTeeth').value,10) || 40;
+    const visRpm = parseFloat($('#visRpmNum').value)||1;
+    const rear = rears[gearIndex];
+    const ratio = front / rear;
+    const circ=getCirc();
+    const wheel_rpm = ratio * visRpm;
+    const speed_mps = (wheel_rpm/60) * circ;
+    const speed_disp = mpsToDisplay(speed_mps);
+    $('#gv_label').textContent = `Gear ${gearIndex+1}/${rears.length} — ${front}/${rear}T`;
+    $('#gv_ratio').textContent = `ratio = front/rear = ${front}/${rear} = ${ratio.toFixed(2)}×`;
+    $('#gv_frontT').textContent = `${front}T ring`;
+    $('#gv_crank_rpm').textContent = `${visRpm.toFixed(2)} rpm`;
+    $('#gv_wheel_rpm').textContent = `${wheel_rpm.toFixed(2)} rpm`;
+    $('#gv_speed').textContent = `${speed_disp.toFixed(2)} ${unitLabel()}`;
+    drawGearCanvas(parseRear($('#rearCogs').value));
+  }
+
+  /* ---------- Main compute ---------- */
   function compute(){
     const circ=getCirc(), radius=circ/(2*Math.PI);
     const front=parseInt($('#frontTeeth').value,10);
@@ -527,8 +700,7 @@
       <div style="margin-top:4px"><span class="badge">Power-limited grade @ ${fmt(mphToDisplay(climbMph),1)} ${unitLabel()}</span> <b>${fmt(gPowerPct,1)}%</b> (gear-independent)</div>
     `;
 
-    // Gear summary: range and avg step
-    const ratios = rears.map(r=>front/r).sort((a,b)=>a-b); // low->high
+    const ratios = rears.map(r=>front/r).sort((a,b)=>a-b);
     const gearRange = ratios[ratios.length-1] / ratios[0];
     let steps=[]; for(let i=1;i<ratios.length;i++){ steps.push((ratios[i]/ratios[i-1]-1)*100); }
     const avgStep = steps.length? (steps.reduce((a,b)=>a+b,0)/steps.length) : 0;
@@ -557,38 +729,12 @@
     ], {title:`Max Grade at ${fmt(mphToDisplay(climbMph),1)} ${unitLabel()} (per gear)`, formatY:v=>v.toFixed(0)+'%'});
 
     drawSlopeVisual($('#chartSlope'), labels, gradeActual);
-
     updateGearVisualizer(rears);
     updateGearButtons(rears);
-    calcRange(); // new range panel
+    calcRange();
   }
 
-  function updateGearButtons(rears){
-    $('#gearDown').disabled = (gearIndex<=0);
-    $('#gearUp').disabled   = (gearIndex>=rears.length-1);
-  }
-
-  function updateGearVisualizer(rears){
-    if(!rears.length) return;
-    gearIndex = clampGear(gearIndex, rears);
-    const front=parseInt($('#frontTeeth').value,10) || 40;
-    const visRpm = parseFloat($('#visRpmNum').value)||1;
-    const rear = rears[gearIndex];
-    const ratio = front / rear;
-    const circ=getCirc();
-    const wheel_rpm = ratio * visRpm;
-    const speed_mps = (wheel_rpm/60) * circ;
-    const speed_disp = mpsToDisplay(speed_mps);
-    $('#gv_label').textContent = `Gear ${gearIndex+1}/${rears.length} — ${front}/${rear}T`;
-    $('#gv_ratio').textContent = `ratio = front/rear = ${front}/${rear} = ${ratio.toFixed(2)}×`;
-    $('#gv_frontT').textContent = `${front}T ring`;
-    $('#gv_crank_rpm').textContent = `${visRpm.toFixed(2)} rpm`;
-    $('#gv_wheel_rpm').textContent = `${wheel_rpm.toFixed(2)} rpm`;
-    $('#gv_speed').textContent = `${speed_disp.toFixed(2)} ${unitLabel()}`;
-    drawGearCanvas(rears);
-  }
-
-  // ---------- range panel ----------
+  /* ---------- Range box ---------- */
   function calcRange(){
     const batAh = parseFloat($('#batAh').value)||0;
     const usablePct = Math.min(100, Math.max(0, parseFloat($('#usablePct').value)||0));
@@ -604,17 +750,14 @@
     const grade = (parseFloat($('#rangeGradePct').value)||0)/100;
 
     const usableWh = batAh * V * (usablePct/100);
-    // Required total power at steady-state @ speed v and grade
     const Paero = 0.5*rho*CdA*v*v*v;
     const Proll = m*g*Crr*v;
     const Pgrav = m*g*grade*v;
     const Ptotal = Paero + Proll + Pgrav;
-
-    // Motor mechanical power is what's left after rider input
     const Pmotor_mech = Math.max(0, Ptotal - riderW);
     const P_batt = motorEff>0 ? Pmotor_mech / motorEff : Infinity;
 
-    let text = '';
+    let text='';
     if(!isFinite(P_batt) || P_batt<=0 || usableWh<=0 || v<=0){
       text = `<div class="no">Insufficient data for range (check battery, efficiency and speed).</div>`;
     } else {
@@ -625,7 +768,7 @@
       const mins = Math.floor((hours - h)*60);
       text = `
         <div><span class="badge">Usable energy</span> <b>${fmt(usableWh,0)} Wh</b></div>
-        <div class="spacer"></div>
+        <div style="height:6px"></div>
         <div><span class="badge">Cruise @ ${fmt(mphToDisplay(cruiseMph),1)} ${unitLabel()}, grade ${fmt(grade*100,1)}%</span> 
           battery draw ≈ <b>${fmt(P_batt,0)} W</b> • ride time ≈ <b>${h}h ${mins}m</b></div>
         <div style="margin-top:4px"><span class="badge">Estimated range</span> <b>${fmt(dist_miles,1)} mi</b> / <b>${fmt(dist_km,1)} km</b></div>
@@ -635,7 +778,7 @@
     $('#rangeBox').innerHTML = text;
   }
 
-  // ---------- solver & uncertainty (speed-unit aware) ----------
+  /* ---------- Solver & Uncertainty ---------- */
   function solve(){
     const circ=getCirc(), radius=circ/(2*Math.PI);
     const m=parseFloat($('#mass').value), Crr=parseFloat($('#crr').value), CdA=parseFloat($('#cda').value), rho=parseFloat($('#rho').value);
@@ -819,24 +962,21 @@
       txt += `<div class="no" style="margin-top:6px">No scenario satisfied both power and gearing with the current constraints. Consider raising rpm/power or relaxing targets.</div>`;
     }
 
-    $('#solveOut').innerHTML = txt;
+    $('#uncOut').innerHTML = txt;
   }
 
-  // ---------- UI glue ----------
+  /* ---------- UI glue, events, presets, share, csv ---------- */
   function highlightSelectedRow(){
     $$('#resultTable tbody tr').forEach(tr=>tr.classList.remove('sel'));
     const tr = $(`#resultTable tbody tr:nth-child(${gearIndex+1})`);
     if(tr) tr.classList.add('sel');
   }
-
   function updateModeUI(){
     const va = $('#powerMode').value==='va';
     $('#voltage').disabled = !va;
     $('#current').disabled = !va;
-    $('#motorEff').disabled = !va && false; // motorEff still used for range; keep enabled
-    $('#mechW').disabled =  va ? true : false;
+    $('#mechW').disabled   =  va ? true : false;
   }
-
   function loadPresetNames(){
     const sel = $('#loadPreset');
     const store = JSON.parse(localStorage.getItem('mdp_presets')||'{}');
@@ -844,13 +984,13 @@
     sel.innerHTML = `<option value="">Load preset…</option>` + Object.keys(store).sort().map(n=>`<option value="${n}">${n}</option>`).join('');
     if(cur && store[cur]) sel.value = cur;
   }
-
   function getConfigObject(){
     const obj={};
     $$('input,select').forEach(el=>{
       if(el.id) obj[el.id] = (el.type==='checkbox') ? el.checked : el.value;
     });
     obj.__speedUnit = speedUnit;
+    obj.__fxEnabled = fxEnabled;
     return obj;
   }
   function applyConfigObject(obj){
@@ -860,19 +1000,31 @@
       if(el.type==='checkbox') el.checked = !!v; else el.value = v;
     });
     if(obj && obj.__speedUnit){ speedUnit = (obj.__speedUnit==='kph'?'kph':'mph'); setUnitButtons(); setSpeedLabels(); }
+    if(obj && typeof obj.__fxEnabled==='boolean'){ setFX(obj.__fxEnabled); }
     compute();
   }
-
   function setUnitButtons(){
     $('#u_mph').classList.toggle('active', speedUnit==='mph');
     $('#u_kph').classList.toggle('active', speedUnit==='kph');
     $('#u_mph').setAttribute('aria-selected', speedUnit==='mph');
     $('#u_kph').setAttribute('aria-selected', speedUnit==='kph');
   }
+  function setFX(on){
+    fxEnabled = !!on;
+    $('#fx_on').classList.toggle('active', fxEnabled);
+    $('#fx_off').classList.toggle('active', !fxEnabled);
+    $('#fx_on').setAttribute('aria-selected', fxEnabled);
+    $('#fx_off').setAttribute('aria-selected', !fxEnabled);
+    if(!fxEnabled) setPlay(true); // pause animation if FX off
+  }
+  function setPlay(paused){
+    animRunning = !paused;
+    $('#fx_play').textContent = paused ? 'Play' : 'Pause';
+    if(animRunning) startAnim(); else stopAnim();
+  }
 
-  // ---------- events ----------
   const autoCompute = debounce(()=>compute(), 200);
-  $$('input,select').forEach(el=>{
+  $$( 'input,select').forEach(el=>{
     el.addEventListener('input', autoCompute, {passive:true});
     el.addEventListener('change', autoCompute);
   });
@@ -886,31 +1038,32 @@
   $('#uncBtn').addEventListener('click', runUncertainty);
   $('#powerMode').addEventListener('change', ()=>{ updateModeUI(); compute(); });
 
-  // Speed unit toggle
+  // Unit toggle
   $('#u_mph').addEventListener('click', ()=>{
     if(speedUnit==='mph') return;
-    // convert displayed speeds from km/h to mph
     ['climbMph','rangeMph','targetTopMph'].forEach(id=>{
-      const v = parseFloat($('#'+id).value)||0;
-      $('#'+id).value = (v/1.609344).toFixed(2);
+      const v = parseFloat($('#'+id).value)||0; $('#'+id).value = (v/1.609344).toFixed(2);
     });
     speedUnit='mph'; setUnitButtons(); setSpeedLabels(); compute();
   });
   $('#u_kph').addEventListener('click', ()=>{
     if(speedUnit==='kph') return;
-    // convert displayed speeds from mph to km/h
     ['climbMph','rangeMph','targetTopMph'].forEach(id=>{
-      const v = parseFloat($('#'+id).value)||0;
-      $('#'+id).value = (v*1.609344).toFixed(2);
+      const v = parseFloat($('#'+id).value)||0; $('#'+id).value = (v*1.609344).toFixed(2);
     });
     speedUnit='kph'; setUnitButtons(); setSpeedLabels(); compute();
   });
 
-  // Arrow keys: ignore when typing in a control
+  // FX toggle + Play/Pause
+  $('#fx_on').addEventListener('click', ()=> setFX(true));
+  $('#fx_off').addEventListener('click', ()=> setFX(false));
+  $('#fx_play').addEventListener('click', ()=> setPlay(animRunning));
+
+  // Arrow keys gear shift (ignore when typing)
   document.addEventListener('keydown', (e)=>{
     if(e.key!=='ArrowUp' && e.key!=='ArrowDown') return;
     const ae = document.activeElement;
-    if(ae && (ae.tagName==='INPUT' || ae.tagName==='SELECT' || ae.tagName==='TEXTAREA' || ae.isContentEditable)) return;
+    if(ae && (ae.tagName==='INPUT' || ae.TAGNAME==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable)) return;
     const rears=parseRear($('#rearCogs').value);
     if(e.key==='ArrowUp'){ gearIndex++; gearIndex=clampGear(gearIndex,rears); compute(); e.preventDefault(); }
     if(e.key==='ArrowDown'){ gearIndex--; gearIndex=clampGear(gearIndex,rears); compute(); e.preventDefault(); }
@@ -958,7 +1111,7 @@
   });
   loadPresetNames();
 
-  // Share URL (hash) encode/decode
+  // Share URL
   $('#shareBtn').addEventListener('click', ()=>{
     const obj = getConfigObject();
     try{
@@ -1001,7 +1154,7 @@
     document.body.appendChild(a); a.click(); a.remove();
   });
 
-  // Resize
+  // Resize re-draw
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>{ drawGearCanvas(parseRear($('#rearCogs').value)); compute(); },120); }, {passive:true});
   if('ResizeObserver' in window){
     const ro = new ResizeObserver(()=>{ drawGearCanvas(parseRear($('#rearCogs').value)); compute(); });
@@ -1010,6 +1163,46 @@
     });
   }
 
+  /* ---------- Animation loop ---------- */
+  function tick(ts){
+    if(!animRunning){ return; }
+    if(!lastT) lastT = ts;
+    const dt = Math.min(0.05, (ts - lastT)/1000);
+    lastT = ts;
+
+    const rears = parseRear($('#rearCogs').value);
+    if(!rears.length){ animRunning=false; return; }
+
+    const frontT = parseInt($('#frontTeeth').value,10)||40;
+    const rearT  = rears[gearIndex];
+    const visRpm = Math.max(0, parseFloat($('#visRpmNum').value)||1);
+    const ratio  = frontT/rearT;
+
+    const wFront = 2*Math.PI*(visRpm/60);
+    const wRear  = 2*Math.PI*(visRpm*ratio/60);
+    const wWheel = wRear;
+
+    angFront += wFront*dt;
+    angRear  += wRear*dt;
+    angWheel += wWheel*dt;
+
+    const rFront = Math.max(20, Math.sqrt(frontT)*2.4);
+    const chainSpeedPxPerSec = (2*Math.PI*rFront) * (visRpm/60);
+    chainOffset += chainSpeedPxPerSec*dt;
+
+    drawGearCanvas(rears);
+    animId = requestAnimationFrame(tick);
+  }
+  function startAnim(){
+    if(!fxEnabled) return;
+    if(animId) cancelAnimationFrame(animId);
+    lastT = 0; animId = requestAnimationFrame(tick);
+  }
+  function stopAnim(){
+    if(animId){ cancelAnimationFrame(animId); animId = null; }
+  }
+
+  // public controls
   function resetDefaults(){
     $('#wheelPreset').value='2100'; $('#circumference').value='';
     $('#frontTeeth').value=40; $('#rearCogs').value='13,14,16,18,21,24,28,34';
@@ -1025,11 +1218,161 @@
     updateModeUI();
   }
 
-  // init
+  /* ---------- Tooltips: desktop hover + mobile tap ---------- */
+  let tipSeq = 0;
+  function mkTipButton(title, body, below=false){
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.className='help-icon' + (below?' tip-below':'');
+    btn.setAttribute('aria-label','Help');
+    const id = `tip_${++tipSeq}`;
+    btn.setAttribute('aria-expanded','false');
+    btn.setAttribute('aria-controls', id);
+    btn.innerHTML = '?';
+    const bubble = document.createElement('div');
+    bubble.className='tip-bubble';
+    bubble.id = id;
+    bubble.setAttribute('role','tooltip');
+    bubble.innerHTML = (title? `<span class="tip-title">${title}</span>`:'') + body;
+    btn.appendChild(bubble);
+    // interactions
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const open = btn.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open?'true':'false');
+      if(open) closeOtherTips(btn);
+      clampTipToViewport(bubble);
+    });
+    btn.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape'){ btn.classList.remove('open'); btn.setAttribute('aria-expanded','false'); btn.blur(); }
+    });
+    return btn;
+  }
+  function closeOtherTips(except){
+    $$('.help-icon.open').forEach(b=>{ if(b!==except){ b.classList.remove('open'); b.setAttribute('aria-expanded','false'); } });
+  }
+  document.addEventListener('click', ()=> closeOtherTips(null), {passive:true});
+  window.addEventListener('scroll', ()=> closeOtherTips(null), {passive:true});
+
+  function clampTipToViewport(bubble){
+    const rect = bubble.getBoundingClientRect();
+    const pad = 8;
+    let dx = 0;
+    if(rect.left < pad) dx = pad - rect.left;
+    else if(rect.right > window.innerWidth - pad) dx = (window.innerWidth - pad) - rect.right;
+    if(dx!==0){
+      bubble.style.transform = `translateX(calc(-50% + ${dx}px))`;
+    }else{
+      bubble.style.transform = '';
+    }
+  }
+
+  function addTipAfterLabel(forId, title, body, below=false){
+    const label = document.querySelector(`label[for="${forId}"]`);
+    if(!label) return;
+    const tip = mkTipButton(title, body, below);
+    label.appendChild(tip); // inline with label text
+  }
+  function addTipAfterSectionTitle(matchText, title, body, below=true){
+    const nodes = $$('.section-title');
+    for(const n of nodes){
+      if(n.textContent.trim().toLowerCase().includes(matchText.toLowerCase())){
+        const tip = mkTipButton(title, body, below);
+        n.appendChild(tip);
+        break;
+      }
+    }
+  }
+
+  // Add lots of tooltips
+  function injectHelp(){
+    addTipAfterLabel('wheelPreset','Wheel size preset',
+      'Choose a typical wheel. “Use custom circumference” lets you enter a measured tyre rollout in millimetres (mm). Speed scales linearly with circumference.');
+    addTipAfterLabel('circumference','Custom circumference',
+      'Roll the bike one wheel revolution and measure ground distance in mm. Leave blank to use the preset value.');
+    addTipAfterLabel('frontTeeth','Front chainring teeth',
+      'More teeth = higher top speed at the same cadence, but less torque at the wheel for climbing.');
+    addTipAfterLabel('rearCogs','Rear cogs (CSV)',
+      'Enter sprocket teeth separated by commas (e.g. 13,14,16,…). Values are cleaned, deduplicated and sorted.');
+
+    addTipAfterLabel('mass','Total mass',
+      'Rider + bike + cargo, in kilograms (kg). Affects rolling and gravitational loads.');
+    addTipAfterLabel('crr','Crr (rolling)',
+      'Coefficient of rolling resistance. Typical 0.004–0.008 for road tyres, higher for knobbies.');
+    addTipAfterLabel('cda','CdA (m²)',
+      'Frontal area × drag coefficient. Upright: ~0.5–0.7 m²; aero tuck: ~0.3–0.4 m².');
+    addTipAfterLabel('rho','Air density ρ',
+      'Air density in kg/m³. Sea level ~1.20 kg/m³. Lower at altitude/heat.');
+    addTipAfterLabel('riderW','Rider watts',
+      'Average rider mechanical power that adds to the motor at the wheel.');
+    addTipAfterLabel('climbMph','Climb speed',
+      'The speed used when computing climb grades. Aerodynamic drag grows with v³; slower climbs reduce aero load.');
+
+    addTipAfterLabel('powerMode','Power entry mode',
+      'Either compute mechanical power from battery V×A×efficiency, or enter shaft mechanical watts directly.');
+    addTipAfterLabel('voltage','Battery voltage (V)',
+      'Nominal pack voltage. Higher V generally allows more power at the same current.');
+    addTipAfterLabel('current','Controller current (A)',
+      'Controller battery current limit in amperes (A).');
+    addTipAfterLabel('motorEff','Motor+controller efficiency',
+      'Fraction (0–1) converting battery watts to shaft watts. Includes controller+motor losses.');
+    addTipAfterLabel('mechW','Mechanical watts',
+      'Direct mechanical power at the shaft (use when not in V×A mode).');
+    addTipAfterLabel('crankTorque','Crank torque (Nm)',
+      'Available crank torque delivered to the chainring. Affects torque-limited climbs.');
+    addTipAfterLabel('driveEff','Drivetrain efficiency',
+      'Fraction (0–1) for chain, sprockets and bearings.');
+    addTipAfterLabel('maxCadence','Max chainring rpm',
+      'RPM limit at the chainring. Sets the rpm-limited top speed per gear.');
+
+    addTipAfterLabel('batAh','Battery capacity (Ah)',
+      'Ampere-hours. Multiply by voltage for watt-hours (Wh). The range calc uses usable Wh.');
+    addTipAfterLabel('usablePct','Usable %',
+      'Leave some reserve for battery longevity or safety. Range uses this percentage of pack energy.');
+    addTipAfterLabel('rangeMph','Range cruise speed',
+      'Speed used for range estimation. Includes grade and rider watts.');
+    addTipAfterLabel('rangeGradePct','Range grade',
+      'Climb grade to include in the range calculation (0% = flat).');
+
+    addTipAfterSectionTitle('Gear visualizer',
+      'Visualizer',
+      'The animation ties to the chainring rpm slider. Use ▲/▼ or the buttons to shift. On desktop, Arrow Up/Down also shift.', true);
+    addTipAfterLabel('visRpm','Visualizer RPM',
+      'Controls animation speed and the live wheel rpm/speed readout.', true);
+
+    addTipAfterSectionTitle('Per-gear results','Per-gear table',
+      'Top speed is rpm-limited for each gear; a flat power-limit line shows the aerodynamic+rolling limit independent of gearing.');
+
+    addTipAfterSectionTitle('Reverse engineer','Reverse engineer',
+      'Enter targets and constraints. The solver proposes chainring and cassette options that meet both top-speed and climb requirements.');
+
+    addTipAfterSectionTitle('Uncertainty','Uncertainty sweeps',
+      'Run a Monte Carlo sweep across ranges (mass, rpm, V/A/eff, torque, drag, rider watts). “Coverage” reports how many scenarios pass.', true);
+
+    // Small help on gear controls
+    const gearCtl = document.getElementById('gearControls');
+    if(gearCtl){
+      const tip = mkTipButton('Shifting',
+        '▲ shifts to a larger rear cog (easier), ▼ to a smaller one (harder). The selected row in the table highlights the current gear.', true);
+      gearCtl.appendChild(tip);
+    }
+  }
+
+  // Init sequence
   setSpeedLabels();
-  updateModeUI();
-  resetDefaults(); 
+  setUnitButtons();
+  $('#fx_play').textContent = animRunning ? 'Pause' : 'Play';
+  resetDefaults();
   compute();
+  if(animRunning) startAnim();
+
+  // Restart animation when rpm or gear changes
+  $('#visRpm,#visRpmNum').addEventListener('input', ()=>{ if(animRunning) startAnim(); }, {passive:true});
+  $('#gearUp').addEventListener('click', ()=>{ if(animRunning) startAnim(); });
+  $('#gearDown').addEventListener('click', ()=>{ if(animRunning) startAnim(); });
+
+  // Inject tooltips once DOM is ready
+  injectHelp();
 })();
 </script>
 </body>
