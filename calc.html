@@ -377,8 +377,8 @@
     <div class="section-title" style="margin-top:12px">Per-gear results</div>
     <div class="note" style="margin-bottom:6px">
       <span class="badge">Columns</span>
-      “Top speed (rpm-limit)” = speed at your chainring rpm cap in that gear. 
-      “Max grade (torque @v)” uses your set climb speed. “Actual” = min(power-limit, torque-limit).
+      "Top speed" = actual top speed considering both power and RPM limits in each gear. 
+      "Max grade (torque @v)" uses your set climb speed. "Actual" = min(power-limit, torque-limit).
     </div>
     <div style="overflow:auto">
       <table id="resultTable">
@@ -1138,8 +1138,14 @@
 
     rears.forEach(rear=>{
       const ratio=front/rear;
-      const speed_mps = maxCad*ratio*circ/60;
-      const top_disp = mpsToDisplay(speed_mps);
+      const speed_mps_rpm_limited = maxCad*ratio*circ/60;
+      const speed_mph_rpm_limited = speed_mps_rpm_limited * MPH_PER_MPS;
+      const speed_mph_power_limited = topFlatMph;
+      
+      // Actual top speed is the minimum of both limits
+      const actual_top_speed_mph = Math.min(speed_mph_rpm_limited, speed_mph_power_limited);
+      const top_disp = mpsToDisplay(actual_top_speed_mph * MPS_PER_MPH);
+      
       const Tw = Tcrank*(rear/front)*chainEff;
       const thrust = Tw / radius;
       const gTorque = ((thrust - 0.5*rho*CdA*vclimb*vclimb)/(m*g)) - Crr;
@@ -1180,7 +1186,7 @@
     drawChart($('#chartSpeed'), labels, [
       {name:`Top speed (${unitLabel()})`, data:speedTopDisp, color:'#4da3ff'},
       {name:`Flat power-limit (${unitLabel()})`, data:labels.map(_=>mphToDisplay(topFlatMph)), color:'#7dffb0', dashed:true, hidePoints:true}
-    ], {title:`Top Speed per Gear (${unitLabel()})`, formatY:v=>v.toFixed(0)});
+    ], {title:`Top Speed per Gear (${unitLabel()}) - Actual (min of power & RPM limits)`, formatY:v=>v.toFixed(0)});
 
     drawChart($('#chartTorque'), labels, [
       {name:'Wheel torque (Nm)', data:torqueNm, color:'#ffb84d'}
@@ -1231,7 +1237,7 @@
       const h = Math.floor(hours);
       const mins = Math.floor((hours - h)*60);
       text = `
-        <div><span class="badge">Usable energy</span> <b>${(usableWh).toFixed(0)} Wh</b></div>
+        <div><span class="badge">Usable energy</span> <b>${fmt(usableWh,0)} Wh</b></div>
         <div style="height:6px"></div>
         <div><span class="badge">Cruise @ ${fmt(mphToDisplay(cruiseMph),1)} ${unitLabel()}, grade ${fmt(grade*100,1)}%</span> 
           battery draw ≈ <b>${fmt(P_batt,0)} W</b> • ride time ≈ <b>${h}h ${mins}m</b></div>
@@ -1287,7 +1293,7 @@
       // Power needed for top speed (aerodynamic + rolling)
       const Paero = 0.5 * rho * CdA * vTop * vTop * vTop;
       const Proll = mass * g * Crr * vTop;
-      const PtopTotal = Paero + Proll - constraints.riderWatts;
+      const PtopTotal = Paero + Proll - constraints.riderW;
       const PtopMotor = Math.max(0, PtopTotal);
       
       minMotorPower = Math.max(minMotorPower, PtopMotor);
@@ -1309,19 +1315,19 @@
       const Paero = 0.5 * rho * CdA * vClimb * vClimb * vClimb;
       const Proll = mass * g * Crr * vClimb;
       const Pgrav = mass * g * grade * vClimb;
-      const PclimbTotal = Paero + Proll + Pgrav - constraints.riderWatts;
+      const PclimbTotal = Paero + Proll + Pgrav - constraints.riderW;
       const PclimbMotor = Math.max(0, PclimbTotal);
       
       minMotorPower = Math.max(minMotorPower, PclimbMotor);
       
       // Torque needed for climbing
-      const thrustNeeded = Math.max(0, (Paero + Proll + Pgrav - constraints.riderWatts) / vClimb);
+      const thrustNeeded = (Paero + Proll + Pgrav - constraints.riderW) / vClimb;
       const wheelTorqueNeeded = thrustNeeded * radius;
       const crankTorqueNeeded = wheelTorqueNeeded / constraints.driveEff;
       
       minTorque = Math.max(minTorque, crankTorqueNeeded);
       
-      report.push(`<div><span class="badge">Climbing</span> ${fmt(grade * 100, 1)}% at ${fmt(mphToDisplay(requirements.climbSpeed), 1)} ${unitLabel()} needs ≥<b>${Math.round(PclimbMotor)}W</b> motor power, ≥<b>${Math.round(crankTorqueNeeded)}Nm</b> crank torque</div>`);
+      report.push(`<div><span class="badge">Climbing</span> ${fmt(grade * 100, 1)}% at ${fmt(mphToDisplay(requirements.climbSpeed), 1)} ${unitLabel()} needs ≥<b>${fmt(PclimbMotor, 0)}W</b> motor power, ≥<b>${fmt(crankTorqueNeeded, 0)}Nm</b> crank torque</div>`);
     }
     
     // 3. Range requirement
@@ -1386,25 +1392,20 @@
     </div>`;
     
     if (minMotorPower > 0) {
-      const electricalPower = minMotorPower / constraints.motorEff;
       output += `<div style="background: rgba(77,163,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
         <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">Motor Specifications</div>
-        <div><span class="badge">Power</span> ≥<b>${Math.round(minMotorPower)}W</b> mechanical (≥<b>${Math.round(electricalPower)}W</b> electrical)</div>
-        ${minTorque > 0 ? `<div><span class="badge">Torque</span> ≥<b>${Math.round(minTorque)}Nm</b> at crank</div>` : ''}
+        <div><span class="badge">Power</span> ≥<b>${fmt(minMotorPower, 0)}W</b> mechanical (≥<b>${fmt(minMotorPower / constraints.motorEff, 0)}W</b> electrical)</div>
+        ${minTorque > 0 ? `<div><span class="badge">Torque</span> ≥<b>${fmt(minTorque, 0)}Nm</b> at crank</div>` : ''}
         <div><span class="badge">Max RPM</span> ≥<b>${constraints.maxRpm}</b> (as specified)</div>
       </div>`;
     }
     
     if (minBatteryAh > 0 || batteryAmp > 0) {
-      const roundedAmp = Math.round(batteryAmp * 10) / 10;
-      const roundedAh = Math.round(minBatteryAh * 10) / 10;
-      const roundedWh = Math.round(minBatteryAh * constraints.batteryV);
-      
       output += `<div style="background: rgba(255,184,77,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
         <div style="font-weight: 600; color: var(--warn); margin-bottom: 8px;">Battery & Controller</div>
         <div><span class="badge">Voltage</span> <b>${constraints.batteryV}V</b> (as specified)</div>
-        ${batteryAmp > 0 ? `<div><span class="badge">Controller</span> ≥<b>${roundedAmp}A</b> continuous current</div>` : ''}
-        ${minBatteryAh > 0 ? `<div><span class="badge">Capacity</span> ≥<b>${roundedAh}Ah</b> (≥<b>${roundedWh}Wh</b>)</div>` : ''}
+        ${batteryAmp > 0 ? `<div><span class="badge">Controller</span> ≥<b>${fmt(batteryAmp, 1)}A</b> continuous current</div>` : ''}
+        ${minBatteryAh > 0 ? `<div><span class="badge">Capacity</span> ≥<b>${fmt(minBatteryAh, 1)}Ah</b> (≥<b>${fmt(minBatteryAh * constraints.batteryV, 0)}Wh</b>)</div>` : ''}
       </div>`;
     }
     
@@ -1564,7 +1565,7 @@
   function setSystemLabels() {
     $('#lbl_sys_topSpeed').textContent = `Target top speed (${unitLabel()})`;
     $('#lbl_sys_climbSpeed').textContent = `Climb speed (${unitLabel()})`;
-    $('#lbl_sys_range').textContent = `Range (${speedUnit === 'mph' ? 'miles' : 'km'})`;
+    $('#lbl_sys_range').textContent = `Range (${speedUnit === 'mph' ? 'mi' : 'km'})`;
     $('#lbl_sys_rangeSpeed').textContent = `Range cruise speed (${unitLabel()})`;
   }
 
@@ -1895,53 +1896,58 @@
     const reqRingList=[], reqSmallList=[], reqLargeList=[];
 
     for(let i=0;i<N;i++){
-      const m=rand(mMin,mMax), Crr=rand(0.005,0.008), CdA=rand(0.55,0.70), rho=1.20;
-      const RW=rand(RWmin,RWmax);
-      const rpm=rand(rpmMin,rpmMax);
-      const V=mode==='va'?rand(Vmin,Vmax):parseFloat($('#voltage').value);
-      const A=mode==='va'?rand(Amin,Amax):parseFloat($('#current').value);
-      const eff=mode==='va'?rand(effMin,effMax):parseFloat($('#motorEff').value);
-      const Tcrank=rand(TMin,TMax);
-      const P_mech = (mode==='va' ? (V*A*eff) : mechW_base) + RW;
+      // Randomize inputs within specified ranges
+      const m = rand(mMin, mMax);
+      const Crr = rand(0.005, 0.008);
+      const CdA = rand(0.55, 0.70);
+      const rho = 1.20;
+      const RW = rand(RWmin, RWmax);
+      const rpm = rand(rpmMin, rpmMax);
+      const V = mode === 'va' ? rand(Vmin, Vmax) : parseFloat($('#voltage').value);
+      const A = mode === 'va' ? rand(Amin, Amax) : parseFloat($('#current').value);
+      const eff = mode === 'va' ? rand(effMin, effMax) : parseFloat($('#motorEff').value);
+      const Tcrank = rand(TMin, TMax);
+      const P_mech = (mode === 'va' ? (V * A * eff) : mechW_base) + RW;
 
+      // Calculate top speed and torque for the current scenario
       const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
-      const topFlatMph = vFlat*MPH_PER_MPS;
+      const topFlatMph = vFlat * MPH_PER_MPS;
       const needTopMps = targetTopMph * MPS_PER_MPH;
-      const ratioReq = needTopMps*60/(rpm*circ);
-      const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
+      const ratioReq = needTopMps * 60 / (rpm * circ);
+      const Tw_req = (((targetGrade + Crr) * m * g) + 0.5 * rho * CdA * v * v) * radius;
 
-      let powerOK = (topFlatMph >= targetTopMph) && ((((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr) >= targetGrade);
-      if(!powerOK){
-        if(topFlatMph < targetTopMph) powerTopFails++; else powerClimbFails++;
+      let powerOK = (topFlatMph >= targetTopMph) && ((((P_mech / v) - 0.5 * rho * CdA * v * v) / (m * g)) - Crr) >= targetGrade;
+      if (!powerOK) {
+        if (topFlatMph < targetTopMph) powerTopFails++; else powerClimbFails++;
       }
 
-      let gearOK=false, needRing=null, needSmall=null, needLarge=null;
-      function needLargeFor(frontTeeth){ return Math.ceil(frontTeeth * Tw_req/(Tcrank*chainEff)); }
+      let gearOK = false, needRing = null, needSmall = null, needLarge = null;
+      function needLargeFor(frontTeeth) { return Math.ceil(frontTeeth * Tw_req / (Tcrank * chainEff)); }
 
-      if(fixedWhat==='none'){
-        let best=null;
-        stdSmall.forEach(s=>{
-          const ring = Math.ceil(ratioReq*s);
+      if (fixedWhat === 'none') {
+        let best = null;
+        stdSmall.forEach(s => {
+          const ring = Math.ceil(ratioReq * s);
           const Lneed = needLargeFor(ring);
-          const L = stdLarge.find(x=>x>=Lneed);
-          if(L){ const cand={ring,s,L}; if(!best || ring<best.ring) best=cand; }
+          const L = stdLarge.find(x => x >= Lneed);
+          if (L) { const cand = { ring, s, L }; if (!best || ring < best.ring) best = cand; }
         });
-        if(best){ gearOK=true; needRing=best.ring; needSmall=best.s; needLarge=best.L; }
-      } else if(fixedWhat==='ring'){
-        const maxSmall = Math.floor(fixedRing/ratioReq);
-        const s = stdSmall.filter(x=>x<=maxSmall).slice(-1)[0];
+        if (best) { gearOK = true; needRing = best.ring; needSmall = best.s; needLarge = best.L; }
+      } else if (fixedWhat === 'ring') {
+        const maxSmall = Math.floor(fixedRing / ratioReq);
+        const s = stdSmall.filter(x => x <= maxSmall).slice(-1)[0];
         const Lneed = needLargeFor(fixedRing);
-        const L = stdLarge.find(x=>x>=Lneed);
-        if(s && L){ gearOK=true; needRing=fixedRing; needSmall=s; needLarge=L; }
+        const L = stdLarge.find(x => x >= Lneed);
+        if (s && L) { gearOK = true; needRing = fixedRing; needSmall = s; needLarge = L; }
       } else {
-        const frontMin = Math.ceil(ratioReq*fixedSmall);
-        const frontMax = Math.floor( (fixedLarge*Tcrank*eff)/Tw_req );
-        if(frontMin<=frontMax){ gearOK=true; needRing=frontMin; needSmall=fixedSmall; needLarge=fixedLarge; }
+        const frontMin = Math.ceil(ratioReq * fixedSmall);
+        const frontMax = Math.floor((fixedLarge * Tcrank * eff) / Tw_req);
+        if (frontMin <= frontMax) { gearOK = true; needRing = frontMin; needSmall = fixedSmall; needLarge = fixedLarge; }
       }
 
-      if(!gearOK){ if(topFlatMph >= targetTopMph) gearTopFails++; else gearClimbFails++; }
+      if (!gearOK) { if (topFlatMph >= targetTopMph) gearTopFails++; else gearClimbFails++; }
 
-      if(powerOK && gearOK){
+      if (powerOK && gearOK) {
         feasible++;
         reqRingList.push(needRing);
         reqSmallList.push(needSmall);
@@ -1949,23 +1955,23 @@
       }
     }
 
-    const cov = feasible/N*100;
-    const ringP95 = Math.ceil(percentile(reqRingList,95));
-    const ringP100 = Math.ceil(percentile(reqRingList,100));
-    const smallMax = reqSmallList.length? Math.max(...reqSmallList) : NaN;
-    const largeP95 = percentile(reqLargeList,95);
-    const largeP100 = percentile(reqLargeList,100);
+    const cov = feasible / N * 100;
+    const ringP95 = Math.ceil(percentile(reqRingList, 95));
+    const ringP100 = Math.ceil(percentile(reqRingList, 100));
+    const smallMax = reqSmallList.length ? Math.max(...reqSmallList) : NaN;
+    const largeP95 = percentile(reqLargeList, 95);
+    const largeP100 = percentile(reqLargeList, 100);
 
-    let txt = `<div><span class="badge">Coverage</span> ${fmt(cov,1)}% of ${N} scenarios meet both power & gearing with your constraints.</div>`;
-    if(N-feasible>0){
-      txt += `<div style="margin-top:4px"><span class="badge">Why failures?</span> power(flat top) ${powerTopFails}, power(climb) ${powerClimbFails}, gearing limits ${gearTopFails+gearClimbFails}.</div>`;
+    let txt = `<div><span class="badge">Coverage</span> ${fmt(cov, 1)}% of ${N} scenarios meet both power & gearing with your constraints.</div>`;
+    if (N - feasible > 0) {
+      txt += `<div style="margin-top:4px"><span class="badge">Why failures?</span> power(flat top) ${powerTopFails}, power(climb) ${powerClimbFails}, gearing limits ${gearTopFails + gearClimbFails}.</div>`;
     }
 
-    if(reqRingList.length>0){
-      txt += `<div style="margin-top:6px"><span class="badge">95% design</span> choose ring ≈ <b>${ringP95}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP95}T</b>.</div>`;
-      txt += `<div style="margin-top:4px"><span class="badge">100% design</span> ring ≈ <b>${ringP100}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP100}T</b>.</div>`;
+    if (reqRingList.length > 0) {
+      txt += `<div style="margin-top:6px"><span class="badge">95% design</span> choose ring ≈ <b>${ringP95}T</b>, top cog ≤ <b>${(isNaN(smallMax) ? '—' : smallMax + 'T')}</b>, low cog ≥ <b>${largeP95}T</b>.</div>`;
+      txt += `<div style="margin-top:4px"><span class="badge">100% design</span> ring ≈ <b>${ringP100}T</b>, top cog ≤ <b>${(isNaN(smallMax) ? '—' : smallMax + 'T')}</b>, low cog ≥ <b>${largeP100}T</b>.</div>`;
       txt += `<div class="note" style="margin-top:4px">Pick the nearest real parts: small from [11,12,13,14] and low from [26,28,30,32,34,36,40,42,46,50].</div>`;
-    }else{
+    } else {
       txt += `<div class="no" style="margin-top:6px">No scenario satisfied both power and gearing with the current constraints. Consider raising rpm/power or relaxing targets.</div>`;
     }
 
