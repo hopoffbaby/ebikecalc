@@ -1358,29 +1358,93 @@
     
     // Suggest specific gearing
     if (suggestedGearing.topSpeedRatio) {
-      // Find reasonable chainring and cassette within constraints
-      const targetRatio = suggestedGearing.topSpeedRatio;
-      let bestGearing = null;
+      // Calculate required gear ratios for both top speed and climbing
+      const topSpeedRatio = suggestedGearing.topSpeedRatio;
       
-      // Use the user-specified chainring range
-      const minChainring = Math.max(constraints.chainringMin, 28);
-      const maxChainring = Math.min(constraints.chainringMax, 70);
+      // Calculate climbing ratio requirement
+      let climbRatio = null;
+      if (requirements.climbSpeed && requirements.climbGrade && minTorque > 0) {
+        const vClimb = requirements.climbSpeed * MPS_PER_MPH;
+        const grade = requirements.climbGrade;
+        const mass = requirements.weight || 160;
+        
+        // Required thrust for climbing
+        const Paero = 0.5 * rho * CdA * vClimb * vClimb * vClimb;
+        const Proll = mass * g * Crr * vClimb;
+        const Pgrav = mass * g * grade * vClimb;
+        const PclimbTotal = Paero + Proll + Pgrav;
+        const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderWatts) / vClimb;
+        const wheelTorqueNeeded = thrustNeeded * radius;
+        
+        // Assume a reasonable crank torque if we need to estimate
+        const estimatedCrankTorque = minTorque || 160;
+        const maxWheelTorque = estimatedCrankTorque * constraints.driveEff;
+        
+        // Required gear ratio for climbing (front/rear)
+        climbRatio = maxWheelTorque / wheelTorqueNeeded;
+      }
+      
+      // Find suitable chainring and cassette
+      let bestGearing = null;
+      const minChainring = Math.max(constraints.chainringMin, 32);
+      const maxChainring = Math.min(constraints.chainringMax, 52);
       
       for (let chainring = minChainring; chainring <= maxChainring; chainring += 2) {
-        const maxRear = Math.round(chainring / targetRatio);
-        const minRear = Math.max(11, Math.round(maxRear * 0.35)); // Reasonable range
+        // Calculate required rear cog sizes
+        const smallestRear = Math.max(11, Math.ceil(chainring / topSpeedRatio));
+        let largestRear = 50; // Default maximum
         
-        if (maxRear <= 50 && minRear >= 11) {
-          bestGearing = { chainring, minRear, maxRear };
-          break;
+        if (climbRatio) {
+          largestRear = Math.min(50, Math.ceil(chainring / climbRatio));
+        }
+        
+        // Check if this creates a reasonable cassette range
+        if (smallestRear <= largestRear && smallestRear <= 16 && largestRear >= 28) {
+          // Adjust to realistic cassette options
+          const adjustedSmall = smallestRear <= 11 ? 11 : (smallestRear <= 13 ? 13 : 16);
+          const adjustedLarge = largestRear >= 42 ? 42 : (largestRear >= 34 ? 34 : 28);
+          
+          if (adjustedSmall <= adjustedLarge) {
+            bestGearing = { 
+              chainring, 
+              minRear: adjustedSmall, 
+              maxRear: adjustedLarge,
+              topSpeedCheck: chainring / adjustedSmall >= topSpeedRatio ? '✓' : '✗',
+              climbCheck: climbRatio ? (chainring / adjustedLarge <= climbRatio ? '✓' : '✗') : '—'
+            };
+            break;
+          }
         }
       }
       
       if (bestGearing) {
-        suggestedGearing.recommendation = `${bestGearing.chainring}T chainring with ${bestGearing.minRear}-${bestGearing.maxRear}T cassette`;
+        const topSpeedActual = (bestGearing.chainring / bestGearing.minRear);
+        const climbActual = climbRatio ? (bestGearing.chainring / bestGearing.maxRear) : null;
+        
+        let recommendation = `${bestGearing.chainring}T chainring with ${bestGearing.minRear}-${bestGearing.maxRear}T cassette`;
+        
+        // Add validation info
+        let validation = '<div class="small muted" style="margin-top: 4px;">';
+        validation += `Top speed ratio: need ≤${topSpeedRatio.toFixed(2)}, get ${topSpeedActual.toFixed(2)} ${bestGearing.topSpeedCheck}`;
+        if (climbRatio) {
+          validation += `<br>Climb ratio: need ≥${climbRatio.toFixed(2)}, get ${climbActual.toFixed(2)} ${bestGearing.climbCheck}`;
+        }
+        validation += '</div>';
+        
+        suggestedGearing.recommendation = recommendation + validation;
       } else {
-        // If no solution found, suggest relaxing constraints
-        suggestedGearing.recommendation = `No suitable gearing found within ${constraints.chainringMin}-${constraints.chainringMax}T chainring range. Consider expanding chainring size limits.`;
+        // Provide more specific guidance
+        const needSmallest = Math.ceil(minChainring / topSpeedRatio);
+        const needLargest = climbRatio ? Math.ceil(maxChainring / climbRatio) : null;
+        
+        let guidance = `Difficult to meet requirements with chainring range ${constraints.chainringMin}-${constraints.chainringMax}T. `;
+        guidance += `Top speed needs rear cog ≥${needSmallest}T. `;
+        if (needLargest) {
+          guidance += `Climbing needs rear cog ≥${needLargest}T. `;
+        }
+        guidance += 'Consider wider chainring range or adjust targets.';
+        
+        suggestedGearing.recommendation = guidance;
       }
     }
     
