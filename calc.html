@@ -1294,7 +1294,7 @@
       const Paero = 0.5 * rho * CdA * vTop * vTop * vTop;
       const Proll = mass * g * Crr * vTop;
       const PtopTotal = Paero + Proll;
-      const PtopMotor = Math.max(0, PtopTotal - constraints.riderW);
+      const PtopMotor = Math.max(0, PtopTotal - constraints.riderWatts);
       
       minMotorPower = Math.max(minMotorPower, PtopMotor);
       
@@ -1316,12 +1316,12 @@
       const Proll = mass * g * Crr * vClimb;
       const Pgrav = mass * g * grade * vClimb;
       const PclimbTotal = Paero + Proll + Pgrav;
-      const PclimbMotor = Math.max(0, PclimbTotal - constraints.riderW);
+      const PclimbMotor = Math.max(0, PclimbTotal - constraints.riderWatts);
       
       minMotorPower = Math.max(minMotorPower, PclimbMotor);
       
       // Torque needed for climbing
-      const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderW) / vClimb;
+      const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderWatts) / vClimb;
       const wheelTorqueNeeded = thrustNeeded * radius;
       const crankTorqueNeeded = wheelTorqueNeeded / constraints.driveEff;
       
@@ -1341,7 +1341,7 @@
       const Proll = mass * g * Crr * vRange;
       const Pgrav = mass * g * rangeGrade * vRange;
       const PrangeTotal = Paero + Proll + Pgrav;
-      const PrangeMotor = Math.max(0, PrangeTotal - constraints.riderW);
+      const PrangeMotor = Math.max(0, PrangeTotal - constraints.riderWatts);
       const PrangeBattery = PrangeMotor / constraints.motorEff;
       
       // Battery capacity needed
