@@ -703,22 +703,87 @@
     const currentSpeedMps = (wheelRpm/60) * circ;
     const currentSpeedDisp = mpsToDisplay(currentSpeedMps);
 
-    // Draw chain segments - properly calculated for actual cog positions and sizes
-    const dy = 4; // Reduced vertical offset for a tighter chain line
-    const chainTop = [
-      {x1: leftX, y1: centerY - rFront - dy, x2: rightX, y2: centerY - rRear - dy}
-    ];
-    const chainBottom = [
-      {x1: rightX, y1: centerY + rRear + dy, x2: leftX, y2: centerY + rFront + dy}
-    ];
+    // Calculate proper tangent points for chain wrapping
+    const dx = rightX - leftX;
+    const dy = 0; // Same height
+    const distance = Math.sqrt(dx*dx + dy*dy);
+    
+    // External tangent angles (for top and bottom chains)
+    const dr = rRear - rFront;
+    const angle = Math.asin(dr / distance);
+    
+    // Top chain tangent points
+    const topAngle = -Math.PI/2 + angle;
+    const topFrontX = leftX + rFront * Math.cos(topAngle);
+    const topFrontY = centerY + rFront * Math.sin(topAngle);
+    const topRearX = rightX + rRear * Math.cos(topAngle);
+    const topRearY = centerY + rRear * Math.sin(topAngle);
+    
+    // Bottom chain tangent points
+    const bottomAngle = Math.PI/2 + angle;
+    const bottomFrontX = leftX + rFront * Math.cos(bottomAngle);
+    const bottomFrontY = centerY + rFront * Math.sin(bottomAngle);
+    const bottomRearX = rightX + rRear * Math.cos(bottomAngle);
+    const bottomRearY = centerY + rRear * Math.sin(bottomAngle);
+
+    // Create complete chain path with arcs around back of sprockets
+    const chainPath = [];
+    
+    // Top straight segment
+    chainPath.push({x1: topFrontX, y1: topFrontY, x2: topRearX, y2: topRearY});
+    
+    // Arc around back of rear sprocket (clockwise from top to bottom)
+    const rearArcSteps = Math.max(8, Math.ceil(rRear / 6));
+    const rearStartAngle = topAngle;
+    const rearEndAngle = bottomAngle;
+    let rearAngleSpan = rearEndAngle - rearStartAngle;
+    if(rearAngleSpan < 0) rearAngleSpan += 2*Math.PI;
+    
+    for(let i = 0; i < rearArcSteps; i++) {
+      const t1 = i / rearArcSteps;
+      const t2 = (i + 1) / rearArcSteps;
+      const a1 = rearStartAngle + t1 * rearAngleSpan;
+      const a2 = rearStartAngle + t2 * rearAngleSpan;
+      chainPath.push({
+        x1: rightX + rRear * Math.cos(a1),
+        y1: centerY + rRear * Math.sin(a1),
+        x2: rightX + rRear * Math.cos(a2),
+        y2: centerY + rRear * Math.sin(a2)
+      });
+    }
+    
+    // Bottom straight segment (right to left)
+    chainPath.push({x1: bottomRearX, y1: bottomRearY, x2: bottomFrontX, y2: bottomFrontY});
+    
+    // Arc around back of front sprocket (clockwise from bottom to top)
+    const frontArcSteps = Math.max(8, Math.ceil(rFront / 6));
+    const frontStartAngle = bottomAngle;
+    const frontEndAngle = topAngle;
+    // Calculate the larger arc (going the back way around)
+    let frontAngleSpan = frontEndAngle - frontStartAngle;
+    if(frontAngleSpan > 0) frontAngleSpan -= 2*Math.PI; // Make it negative to go the long way
+    frontAngleSpan = Math.abs(frontAngleSpan);
+    
+    for(let i = 0; i < frontArcSteps; i++) {
+      const t1 = i / frontArcSteps;
+      const t2 = (i + 1) / frontArcSteps;
+      // Go clockwise around the back
+      const a1 = frontStartAngle + t1 * frontAngleSpan;
+      const a2 = frontStartAngle + t2 * frontAngleSpan;
+      chainPath.push({
+        x1: leftX + rFront * Math.cos(a1),
+        y1: centerY + rFront * Math.sin(a1),
+        x2: leftX + rFront * Math.cos(a2),
+        y2: centerY + rFront * Math.sin(a2)
+      });
+    }
 
     // Draw sprockets
     drawSprocket(ctx, leftX, centerY, rFront, frontT, angFront, "#4da3ff");
     drawSprocket(ctx, rightX, centerY, rRear, rearT, angRear, "#ffb84d");
 
-    // Draw chains with proper spacing
-    drawChain(ctx, chainTop, 10, chainOffset, "#8fd0ff");
-    drawChain(ctx, chainBottom, 10, chainOffset - chainTop.reduce((s,seg)=>s+Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1),0), "#8fd0ff");
+    // Draw complete chain loop
+    drawChain(ctx, chainPath, 10, chainOffset, "#8fd0ff");
 
     // Simple labels only
     ctx.fillStyle='#a9b7c6'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='center';
