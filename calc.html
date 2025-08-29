@@ -562,25 +562,163 @@
     const dpr=Math.max(1,window.devicePixelRatio||1), w=canvas.clientWidth, h=canvas.clientHeight;
     canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
     const ctx=canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
-    const pad={l:10,r:10,t:10,b:36};
+    
+    const pad={l:15,r:15,t:20,b:50};
     const plotW=w-pad.l-pad.r, plotH=h-pad.t-pad.b;
     const N = labels.length; if(N===0) return;
     const colW = plotW / N;
-    ctx.fillStyle='#7f92a9'; ctx.font='11px system-ui,sans-serif'; ctx.textAlign='center';
-    for(let i=0;i<N;i++){
-      const pct = gradePctList[i]||0;
-      const theta = Math.atan((pct)/100);
-      const len = Math.min(40, colW*0.8);
-      const cx = pad.l + colW*(i+0.5);
-      const cy = pad.t + plotH*0.65;
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-theta);
-      ctx.fillStyle='#1a2634'; ctx.fillRect(-len/2, -4, len, 8);
-      ctx.strokeStyle='#2b3b52'; ctx.lineWidth=1;
-      for(let s=-len/2; s<=len/2; s+=8){ ctx.beginPath(); ctx.moveTo(s, -4); ctx.lineTo(s+4, 4); ctx.stroke(); }
-      ctx.restore();
-      ctx.fillStyle='#a9b7c6'; ctx.fillText(labels[i], cx, h - 22);
-      ctx.fillStyle='#7dffb0'; ctx.fillText(`${pct.toFixed(0)}%`, cx, h - 10);
+    
+    // Create gradient backgrounds for terrain
+    const groundGradient = ctx.createLinearGradient(0, pad.t + plotH * 0.7, 0, h);
+    groundGradient.addColorStop(0, '#2d4a3a');
+    groundGradient.addColorStop(0.3, '#1a2634');
+    groundGradient.addColorStop(1, '#0b1118');
+    
+    // Draw background terrain
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, pad.t + plotH * 0.7, w, h - (pad.t + plotH * 0.7));
+    
+    // Add subtle grid lines
+    ctx.strokeStyle = '#223040';
+    ctx.lineWidth = 0.5;
+    for(let i = 0; i <= N; i++) {
+      const x = pad.l + (plotW * i / N);
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, pad.t + plotH);
+      ctx.stroke();
     }
+    
+    for(let i = 0; i < N; i++){
+      const pct = gradePctList[i] || 0;
+      const cx = pad.l + colW * (i + 0.5);
+      const baseY = pad.t + plotH * 0.7;
+      
+      // Calculate slope dimensions
+      const slopeLength = Math.min(colW * 0.7, 60);
+      const theta = Math.atan(pct / 100);
+      const rise = slopeLength * Math.sin(theta);
+      const run = slopeLength * Math.cos(theta);
+      
+      // Create slope gradient based on grade difficulty
+      const slopeGradient = ctx.createLinearGradient(cx - run/2, baseY - rise, cx + run/2, baseY);
+      if(pct < 5) {
+        slopeGradient.addColorStop(0, '#4da3ff');
+        slopeGradient.addColorStop(1, '#2a6fbf');
+      } else if(pct < 15) {
+        slopeGradient.addColorStop(0, '#7dffb0');
+        slopeGradient.addColorStop(1, '#4a9d6b');
+      } else if(pct < 25) {
+        slopeGradient.addColorStop(0, '#ffb84d');
+        slopeGradient.addColorStop(1, '#d18a1c');
+      } else {
+        slopeGradient.addColorStop(0, '#ff6b6b');
+        slopeGradient.addColorStop(1, '#c23333');
+      }
+      
+      // Draw slope surface with 3D effect
+      ctx.save();
+      ctx.translate(cx, baseY);
+      
+      // Main slope surface
+      ctx.fillStyle = slopeGradient;
+      ctx.beginPath();
+      ctx.moveTo(-run/2, 0);
+      ctx.lineTo(run/2, -rise);
+      ctx.lineTo(run/2 + 8, -rise + 4); // 3D depth
+      ctx.lineTo(-run/2 + 8, 4); // 3D depth
+      ctx.closePath();
+      ctx.fill();
+      
+      // Slope edge highlight
+      ctx.strokeStyle = pct < 5 ? '#6bb8ff' : (pct < 15 ? '#a0ffcc' : (pct < 25 ? '#ffc976' : '#ff9999'));
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-run/2, 0);
+      ctx.lineTo(run/2, -rise);
+      ctx.stroke();
+      
+      // Add road markings for realism
+      if(slopeLength > 30) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 6]);
+        ctx.beginPath();
+        ctx.moveTo(-run/4, -rise/4);
+        ctx.lineTo(run/4, -3*rise/4);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      // Shadow underneath
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(-run/2 + 8, 4);
+      ctx.lineTo(run/2 + 8, -rise + 4);
+      ctx.lineTo(run/2 + 12, -rise + 8);
+      ctx.lineTo(-run/2 + 12, 8);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Enhanced labels with background
+      const labelY = h - 35;
+      const percentY = h - 18;
+      
+      // Label background
+      ctx.fillStyle = 'rgba(11, 17, 24, 0.8)';
+      ctx.roundRect(cx - 25, labelY - 12, 50, 28, 6);
+      ctx.fill();
+      
+      // Gear label
+      ctx.fillStyle = '#cfe2ff';
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.fontWeight = '600';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[i], cx, labelY);
+      
+      // Grade percentage with color coding
+      ctx.fillStyle = pct < 5 ? '#4da3ff' : (pct < 15 ? '#7dffb0' : (pct < 25 ? '#ffb84d' : '#ff6b6b'));
+      ctx.font = 'bold 12px system-ui, sans-serif';
+      ctx.fillText(`${pct.toFixed(0)}%`, cx, percentY);
+      
+      // Add small indicator arrow for very steep grades
+      if(pct > 20) {
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.moveTo(cx + 20, labelY - 5);
+        ctx.lineTo(cx + 26, labelY - 2);
+        ctx.lineTo(cx + 20, labelY + 1);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    
+    // Add title with gradient
+    ctx.fillStyle = '#a9b7c6';
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Maximum Climb Grade per Gear', pad.l, 15);
+    
+    // Add legend
+    const legendX = w - 120;
+    const legendY = 25;
+    const legendItems = [
+      {color: '#4da3ff', text: '< 5%'},
+      {color: '#7dffb0', text: '5-15%'},
+      {color: '#ffb84d', text: '15-25%'},
+      {color: '#ff6b6b', text: '> 25%'}
+    ];
+    
+    legendItems.forEach((item, i) => {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(legendX, legendY + i * 12, 8, 8);
+      ctx.fillStyle = '#a9b7c6';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(item.text, legendX + 12, legendY + i * 12 + 7);
+    });
   }
 
   /* ---------- Sexy Gear Canvas Animation ---------- */
@@ -1019,6 +1157,8 @@
     if(fixedWhat==='none'){
       let best=null;
       stdSmall.forEach(s=>{
+       
+
         const ring = Math.ceil(ratioReq*s);
         const L = pickLarge(ring);
         if(L){ if(!best || ring<best.ring) best={ring,s,L}; }
