@@ -153,7 +153,7 @@
   }
   .tip-bubble .tip-title{display:block;font-weight:700;color:#b9ffdb;margin-bottom:4px}
   .tip-bubble::after{
-    content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
+    content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%) rotate(180deg);
     border-width:8px;border-style:solid;border-color:#0d1623 transparent transparent transparent;
     filter:drop-shadow(0 2px 0 #243248);
   }
@@ -584,10 +584,10 @@
   }
 
   /* ---------- Sexy Gear Canvas Animation ---------- */
-  let animId = null, lastT = 0, angFront = 0, angRear = 0, angWheel = 0, chainOffset = 0;
+  let animId = null, lastT = 0, angFront = 0, angRear = 0, chainOffset = 0;
 
   function drawSprocket(ctx, x, y, baseR, teeth, angle, color){
-    const toothH = 6, innerR = baseR-4, outerR = baseR+toothH;
+    const toothH = 4, innerR = baseR-toothH, outerR = baseR+toothH;
     ctx.save();
     ctx.translate(x,y);
     ctx.rotate(angle);
@@ -610,23 +610,6 @@
     }
     ctx.globalAlpha=1;
     ctx.beginPath(); ctx.arc(0,0,innerR,0,Math.PI*2); ctx.strokeStyle="#1b2a40"; ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawWheel(ctx,x,y,r,angle){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    ctx.shadowColor= "#7dffb0"; ctx.shadowBlur=10;
-    ctx.strokeStyle="#7dffb0"; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
-    const spokeN=16;
-    ctx.lineWidth=1.2; ctx.strokeStyle="#aefcd2";
-    for(let i=0;i<spokeN;i++){
-      const a = i*2*Math.PI/spokeN;
-      const x1 = r*0.1*Math.cos(a+Math.PI/8), y1 = r*0.1*Math.sin(a+Math.PI/8);
-      const x2 = r*Math.cos(a), y2 = r*Math.sin(a);
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    }
-    ctx.fillStyle="#0e1a28"; ctx.beginPath(); ctx.arc(0,0,r*0.12,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 
@@ -669,49 +652,88 @@
     const circ   = getCirc();
     const visRpm = Math.max(0, parseFloat($('#visRpmNum').value)||1);
 
-    const pad = {l:24, r:24, t:20, b:20};
-    const leftX = pad.l + 70;
-    const midX = w/2 + 30;
-    const wheelX = w - 140;
-    const centerY = h/2 + 8;
+    // Calculate proper scaling - use actual tooth proportions
+    const maxTeeth = Math.max(frontT, rearT);
+    const baseRadius = Math.min(120, Math.max(80, Math.min(w, h) * 0.15));
+    const rFront = baseRadius * (frontT / maxTeeth);
+    const rRear  = baseRadius * (rearT / maxTeeth);
 
-    const rFront = Math.max(20, Math.sqrt(frontT)*2.4);
-    const rRear  = Math.max(12, Math.sqrt(rearT)*2.3);
-    const rWheel = Math.min(100, Math.max(70, (circ/(2*Math.PI))*36));
+    // Position cogs with proper spacing based on actual radii
+    const spacing = rFront + rRear + 60; // More spacing for chain clearance
+    const leftX = w/2 - spacing/2;
+    const rightX = w/2 + spacing/2;
+    const centerY = h/2;
 
-    const dy = 10;
-    const top = [
-      {x1:leftX + rFront, y1:centerY - dy, x2:midX - rRear, y2:centerY - dy},
-      {x1:midX - rRear,   y1:centerY - dy, x2:midX - rRear, y2:centerY - dy}
-    ];
-    const bottom = [{x1:midX - rRear, y1:centerY + dy, x2:leftX + rFront, y2:centerY + dy}];
-
-    const ratio   = frontT/rearT;
+    const ratio = frontT/rearT;
     const wheelRpm = visRpm * ratio;
 
-    drawSprocket(ctx,leftX, centerY, rFront, frontT, angFront, "#4da3ff");
-    drawSprocket(ctx, midX,  centerY, rRear,  rearT,  angRear,  "#ffb84d");
-    drawWheel   (ctx, wheelX,centerY, rWheel, angWheel);
+    // Calculate actual max speed considering both limits
+    const m = parseFloat($('#mass').value) || 160;
+    const Crr = 0.006;
+    const CdA = 0.60;
+    const rho = 1.20;
+    const riderW = Math.max(0, parseFloat($('#riderW').value) || 0);
+    const V = parseFloat($('#voltage').value) || 52;
+    const A = parseFloat($('#current').value) || 30;
+    const motorEff = Math.min(1, Math.max(0, parseFloat($('#motorEff').value) || 0.82));
+    const maxCad = parseFloat($('#maxCadence').value) || 140;
+    const mode = $('#powerMode').value;
+    
+    let P_mech = 0;
+    if(mode === 'va') {
+      P_mech = V * A * motorEff;
+    } else {
+      P_mech = Math.max(0, parseFloat($('#mechW').value) || 0);
+    }
+    P_mech += riderW;
 
-    drawChain(ctx, top,    16, chainOffset, "#8fd0ff");
-    drawChain(ctx, bottom, 16, chainOffset - (top.reduce((s,seg)=>s+Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1),0)), "#8fd0ff");
+    // Power-limited top speed
+    const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+    const topFlatMph = vFlat * MPH_PER_MPS;
+    
+    // RPM-limited top speed for current gear
+    const topGearRpmMps = (maxCad * ratio * circ / 60);
+    const topGearRpmMph = topGearRpmMps * MPH_PER_MPS;
+    
+    // Actual top speed is the minimum of both limits
+    const actualTopMph = Math.min(topFlatMph, topGearRpmMph);
+    const actualTopDisp = mphToDisplay(actualTopMph);
 
+    // Current speed from visualizer
+    const currentSpeedMps = (wheelRpm/60) * circ;
+    const currentSpeedDisp = mpsToDisplay(currentSpeedMps);
+
+    // Draw chain segments - properly calculated for actual cog positions and sizes
+    const dy = 4; // Reduced vertical offset for a tighter chain line
+    const chainTop = [
+      {x1: leftX, y1: centerY - rFront - dy, x2: rightX, y2: centerY - rRear - dy}
+    ];
+    const chainBottom = [
+      {x1: rightX, y1: centerY + rRear + dy, x2: leftX, y2: centerY + rFront + dy}
+    ];
+
+    // Draw sprockets
+    drawSprocket(ctx, leftX, centerY, rFront, frontT, angFront, "#4da3ff");
+    drawSprocket(ctx, rightX, centerY, rRear, rearT, angRear, "#ffb84d");
+
+    // Draw chains with proper spacing
+    drawChain(ctx, chainTop, 10, chainOffset, "#8fd0ff");
+    drawChain(ctx, chainBottom, 10, chainOffset - chainTop.reduce((s,seg)=>s+Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1),0), "#8fd0ff");
+
+    // Simple labels only
     ctx.fillStyle='#a9b7c6'; ctx.font='12px system-ui,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(`${frontT}T ring`, leftX, centerY - rFront - 14);
-    ctx.fillText(`${rearT}T cog`,  midX,  centerY - rRear  - 14);
-    ctx.fillText(`Wheel`,         wheelX, centerY - rWheel - 14);
-
+    ctx.fillText(`${frontT}T`, leftX, centerY - rFront - 12);
+    ctx.fillText(`${rearT}T`, rightX, centerY - rRear - 12);
+    
+    // Speed display under rear cog
+    ctx.fillStyle='#b9ffdb';
     ctx.font='13px system-ui,sans-serif';
-    ctx.fillStyle='#cfe2ff';  ctx.fillText(`${visRpm.toFixed(1)} rpm`, leftX, centerY + rFront + 18);
-    ctx.fillStyle='#ffe2b5';  ctx.fillText(`${(visRpm*ratio).toFixed(1)} rpm`, midX,  centerY + rRear  + 18);
-    const speed_mps = (wheelRpm/60) * circ;
-    const speed_disp = mpsToDisplay(speed_mps);
-    ctx.fillStyle='#b9ffdb'; ctx.fillText(`${(wheelRpm).toFixed(1)} rpm  •  ${speed_disp.toFixed(2)} ${unitLabel()}`, wheelX, centerY + rWheel + 18);
-  }
-
-  function updateGearButtons(rears){
-    $('#gearDown').disabled = (gearIndex<=0);
-    $('#gearUp').disabled   = (gearIndex>=rears.length-1);
+    ctx.fillText(`${currentSpeedDisp.toFixed(1)} ${unitLabel()}`, rightX, centerY + rRear + 20);
+    
+    // Max speed indicator
+    ctx.fillStyle='#7dffb0';
+    ctx.font='11px system-ui,sans-serif';
+    ctx.fillText(`Max: ${actualTopDisp.toFixed(1)} ${unitLabel()}`, rightX, centerY + rRear + 34);
   }
 
   function updateGearVisualizer(rears){
@@ -725,6 +747,7 @@
     const wheel_rpm = ratio * visRpm;
     const speed_mps = (wheel_rpm/60) * circ;
     const speed_disp = mpsToDisplay(speed_mps);
+    
     $('#gv_label').textContent = `Gear ${gearIndex+1}/${rears.length} — ${front}/${rear}T`;
     $('#gv_ratio').textContent = `ratio = front/rear = ${front}/${rear} = ${ratio.toFixed(2)}×`;
     $('#gv_frontT').textContent = `${front}T ring`;
@@ -732,6 +755,11 @@
     $('#gv_wheel_rpm').textContent = `${wheel_rpm.toFixed(2)} rpm`;
     $('#gv_speed').textContent = `${speed_disp.toFixed(2)} ${unitLabel()}`;
     drawGearCanvas(parseRear($('#rearCogs').value));
+  }
+
+  function updateGearButtons(rears){
+    $('#gearDown').disabled = (gearIndex <= 0);
+    $('#gearUp').disabled = (gearIndex >= rears.length - 1);
   }
 
   /* ---------- Main compute ---------- */
@@ -1279,11 +1307,9 @@
 
     const wFront = 2*Math.PI*(visRpm/60);
     const wRear  = 2*Math.PI*(visRpm*ratio/60);
-    const wWheel = wRear;
 
     angFront += wFront*dt;
     angRear  += wRear*dt;
-    angWheel += wWheel*dt;
 
     const rFront = Math.max(20, Math.sqrt(frontT)*2.4);
     const chainSpeedPxPerSec = (2*Math.PI*rFront) * (visRpm/60);
@@ -1454,10 +1480,14 @@
   // Init sequence
   setSpeedLabels();
   setUnitButtons();
-  $('#fx_play').textContent = animRunning ? 'Pause' : 'Play';
+  setFX(fxEnabled);
   resetDefaults();
   compute();
-  if(animRunning) startAnim();
+  
+  // Start animation if not disabled by user preference
+  if (animRunning) {
+    startAnim();
+  }
 
   // Restart animation when rpm or gear changes
   $('#visRpm,#visRpmNum').addEventListener('input', ()=>{ if(animRunning) startAnim(); }, {passive:true});
