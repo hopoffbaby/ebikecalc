@@ -178,9 +178,6 @@
     <div class="section-title">Rider & Physics</div>
     <div class="inputs">
       <div><label for="mass">Total mass (kg)</label><input id="mass" type="number" value="160" min="1" step="0.1"></div>
-      <div><label for="crr">Crr (rolling)</label><input id="crr" type="number" step="0.001" value="0.006" min="0"></div>
-      <div><label for="cda">C<sub>d</sub>A (m²)</label><input id="cda" type="number" step="0.01" value="0.60" min="0"></div>
-      <div><label for="rho">Air density ρ</label><input id="rho" type="number" step="0.01" value="1.20" min="0"></div>
       <div><label for="riderW">Rider watts</label><input id="riderW" type="number" value="0" min="0" step="1"></div>
       <div><label for="climbMph"><span id="lbl_climb">Target climb speed (mph)</span></label><input id="climbMph" type="number" value="3" min="0" step="0.1"></div>
     </div>
@@ -347,10 +344,6 @@
       <div><label for="u_T_max">Crank torque max (Nm)</label><input id="u_T_max" type="number" value="170" min="0" step="0.1"></div>
       <div><label for="u_RW_min">Rider W min</label><input id="u_RW_min" type="number" value="0" min="0" step="1"></div>
       <div><label for="u_RW_max">Rider W max</label><input id="u_RW_max" type="number" value="150" min="0" step="1"></div>
-      <div><label for="u_Crr_min">Crr min</label><input id="u_Crr_min" type="number" step="0.001" value="0.005" min="0"></div>
-      <div><label for="u_Crr_max">Crr max</label><input id="u_Crr_max" type="number" step="0.001" value="0.008" min="0"></div>
-      <div><label for="u_CdA_min">CdA min</label><input id="u_CdA_min" type="number" step="0.01" value="0.55" min="0"></div>
-      <div><label for="u_CdA_max">CdA max</label><input id="u_CdA_max" type="number" step="0.01" value="0.70" min="0"></div>
       <div class="full"><button id="uncBtn" class="btn" type="button">Run uncertainty</button></div>
     </div>
     <div id="uncOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
@@ -643,9 +636,9 @@
     gearIndex = clampGear(gearIndex, rears);
 
     const m   = parseFloat($('#mass').value);
-    const Crr = parseFloat($('#crr').value);
-    const CdA = parseFloat($('#cda').value);
-    const rho = parseFloat($('#rho').value);
+    const Crr = 0.006;
+    const CdA = 0.60;
+    const rho = 1.20;
     const riderW = Math.max(0, parseFloat($('#riderW').value));
     const Tcrank = parseFloat($('#crankTorque').value);
     const chainEff = parseFloat($('#driveEff').value);
@@ -742,9 +735,9 @@
     const motorEff = Math.min(1, Math.max(0, parseFloat($('#motorEff').value)||0));
     const riderW = Math.max(0, parseFloat($('#riderW').value)||0);
     const m = parseFloat($('#mass').value)||0;
-    const Crr = parseFloat($('#crr').value)||0;
-    const CdA = parseFloat($('#cda').value)||0;
-    const rho = parseFloat($('#rho').value)||0;
+    const Crr = 0.006;
+    const CdA = 0.60;
+    const rho = 1.20;
     const cruiseMph = getSpeedInputMph('rangeMph');
     const v = cruiseMph*MPS_PER_MPH;
     const grade = (parseFloat($('#rangeGradePct').value)||0)/100;
@@ -781,7 +774,7 @@
   /* ---------- Solver & Uncertainty ---------- */
   function solve(){
     const circ=getCirc(), radius=circ/(2*Math.PI);
-    const m=parseFloat($('#mass').value), Crr=parseFloat($('#crr').value), CdA=parseFloat($('#cda').value), rho=parseFloat($('#rho').value);
+    const m=parseFloat($('#mass').value), Crr=0.006, CdA=0.60, rho=1.20;
     const riderW=Math.max(0,parseFloat($('#riderW').value));
     const Tcrank=parseFloat($('#crankTorque').value), eff=parseFloat($('#driveEff').value);
     const V=parseFloat($('#voltage').value), A=parseFloat($('#current').value), motorEff=parseFloat($('#motorEff').value);
@@ -880,15 +873,13 @@
     const effMin=parseFloat($('#u_eff_min').value), effMax=parseFloat($('#u_eff_max').value);
     const TMin=parseFloat($('#u_T_min').value), TMax=parseFloat($('#u_T_max').value);
     const RWmin=parseFloat($('#u_RW_min').value), RWmax=parseFloat($('#u_RW_max').value);
-    const CrrMin=parseFloat($('#u_Crr_min').value), CrrMax=parseFloat($('#u_Crr_max').value);
-    const CdAMin=parseFloat($('#u_CdA_min').value), CdAMax=parseFloat($('#u_CdA_max').value);
     const mechW_base=parseFloat($('#mechW').value);
 
     let feasible=0, powerTopFails=0, powerClimbFails=0, gearTopFails=0, gearClimbFails=0;
     const reqRingList=[], reqSmallList=[], reqLargeList=[];
 
     for(let i=0;i<N;i++){
-      const m=rand(mMin,mMax), Crr=rand(CrrMin,CrrMax), CdA=rand(CdAMin,CdAMax), rho=parseFloat($('#rho').value);
+      const m=rand(mMin,mMax), Crr=rand(0.005,0.008), CdA=rand(0.55,0.70), rho=1.20;
       const RW=rand(RWmin,RWmax);
       const rpm=rand(rpmMin,rpmMax);
       const V=mode==='va'?rand(Vmin,Vmax):parseFloat($('#voltage').value);
@@ -1206,7 +1197,7 @@
   function resetDefaults(){
     $('#wheelPreset').value='2100'; $('#circumference').value='';
     $('#frontTeeth').value=40; $('#rearCogs').value='13,14,16,18,21,24,28,34';
-    $('#mass').value=160; $('#crr').value=0.006; $('#cda').value=0.60; $('#rho').value=1.20;
+    $('#mass').value=160;
     $('#riderW').value=0; setSpeedInputDisplayFromMph('climbMph',3);
     $('#powerMode').value='va';
     $('#voltage').value=52; $('#current').value=30; $('#motorEff').value=0.82; $('#mechW').value=1280;
@@ -1297,12 +1288,6 @@
 
     addTipAfterLabel('mass','Total mass',
       'Rider + bike + cargo, in kilograms (kg). Affects rolling and gravitational loads.');
-    addTipAfterLabel('crr','Crr (rolling)',
-      'Coefficient of rolling resistance. Typical 0.004–0.008 for road tyres, higher for knobbies.');
-    addTipAfterLabel('cda','CdA (m²)',
-      'Frontal area × drag coefficient. Upright: ~0.5–0.7 m²; aero tuck: ~0.3–0.4 m².');
-    addTipAfterLabel('rho','Air density ρ',
-      'Air density in kg/m³. Sea level ~1.20 kg/m³. Lower at altitude/heat.');
     addTipAfterLabel('riderW','Rider watts',
       'Average rider mechanical power that adds to the motor at the wheel.');
     addTipAfterLabel('climbMph','Climb speed',
