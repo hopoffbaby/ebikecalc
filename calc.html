@@ -1454,7 +1454,7 @@
     
     // Test targets (use current main form targets)
     const targets = {
-      topSpeed: getSpeedInputMph('climbMph') * 10, // Rough top speed estimate
+      topSpeed: Math.min(mphToDisplay(topFlatMph), mphToDisplay(topGearRpmMph)), // Use actual achievable top speed
       climbGrade: 15, // 15% grade
       climbSpeed: getSpeedInputMph('climbMph')
     };
@@ -1508,10 +1508,15 @@
       
       // RPM feasibility for top speed
       const topSpeedMps = binSearchTopSpeedFlat(scenario.motorPower, scenario.mass, scenario.Crr, 1.20, scenario.CdA);
+      const topSpeedMph = topSpeedMps * MPH_PER_MPS;
+      
+      // Check if the top gear can actually achieve the power-limited top speed
       const maxRatioForSpeed = (topSpeedMps * 60) / (baseSpecs.maxCadence * baseSpecs.wheelCirc);
       const actualTopRatio = baseSpecs.frontTeeth / Math.min(...baseSpecs.rearCogs);
       
-      if (actualTopRatio > maxRatioForSpeed) {
+      // Only fail RPM test if the gear ratio prevents reaching the power-limited speed
+      // AND the power-limited speed is above our target
+      if (actualTopRatio > maxRatioForSpeed && topSpeedMph >= targets.topSpeed) {
         scenarioPass = false;
         failures.rpm++;
       }
@@ -2103,6 +2108,22 @@
       'Speed used for range estimation. Includes grade and rider watts.');
     addTipAfterLabel('rangeGradePct','Range grade',
       'Climb grade to include in the range calculation (0% = flat).');
+
+    addTipAfterSectionTitle('Gear visualizer',
+      'Visualizer',
+      'The animation ties to the chainring rpm slider. Use ▲/▼ or the buttons to shift. On desktop, Arrow Up/Down also shift.', true);
+    addTipAfterLabel('visRpm','Visualizer RPM',
+      'Controls animation speed and the live wheel rpm/speed readout.', true);
+
+    addTipAfterSectionTitle('Per-gear results','Per-gear table',
+      'Top speed is rpm-limited for each gear; a flat power-limit line shows the aerodynamic+rolling limit independent of gearing.');
+
+    addTipAfterSectionTitle('Reverse engineer','Reverse engineer',
+      'Enter targets and constraints. The solver proposes chainring and cassette options that meet both top-speed and climb requirements.');
+
+    addTipAfterSectionTitle('Uncertainty','Uncertainty sweeps',
+      'Run a Monte Carlo sweep across ranges (mass, rpm, V/A/eff, torque, drag, rider watts). “Coverage” reports how many scenarios pass.', true);
+
 
     addTipAfterSectionTitle('Gear visualizer',
       'Visualizer',
