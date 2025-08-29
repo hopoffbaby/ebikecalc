@@ -1293,8 +1293,8 @@
       // Power needed for top speed (aerodynamic + rolling)
       const Paero = 0.5 * rho * CdA * vTop * vTop * vTop;
       const Proll = mass * g * Crr * vTop;
-      const PtopTotal = Paero + Proll - constraints.riderW;
-      const PtopMotor = Math.max(0, PtopTotal);
+      const PtopTotal = Paero + Proll;
+      const PtopMotor = Math.max(0, PtopTotal - constraints.riderWatts);
       
       minMotorPower = Math.max(minMotorPower, PtopMotor);
       
@@ -1315,13 +1315,13 @@
       const Paero = 0.5 * rho * CdA * vClimb * vClimb * vClimb;
       const Proll = mass * g * Crr * vClimb;
       const Pgrav = mass * g * grade * vClimb;
-      const PclimbTotal = Paero + Proll + Pgrav - constraints.riderW;
-      const PclimbMotor = Math.max(0, PclimbTotal);
+      const PclimbTotal = Paero + Proll + Pgrav;
+      const PclimbMotor = Math.max(0, PclimbTotal - constraints.riderWatts);
       
       minMotorPower = Math.max(minMotorPower, PclimbMotor);
       
       // Torque needed for climbing
-      const thrustNeeded = (Paero + Proll + Pgrav - constraints.riderW) / vClimb;
+      const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderWatts) / vClimb;
       const wheelTorqueNeeded = thrustNeeded * radius;
       const crankTorqueNeeded = wheelTorqueNeeded / constraints.driveEff;
       
@@ -1340,8 +1340,8 @@
       const Paero = 0.5 * rho * CdA * vRange * vRange * vRange;
       const Proll = mass * g * Crr * vRange;
       const Pgrav = mass * g * rangeGrade * vRange;
-      const PrangeTotal = Paero + Proll + Pgrav - constraints.riderW;
-      const PrangeMotor = Math.max(0, PrangeTotal);
+      const PrangeTotal = Paero + Proll + Pgrav;
+      const PrangeMotor = Math.max(0, PrangeTotal - constraints.riderWatts);
       const PrangeBattery = PrangeMotor / constraints.motorEff;
       
       // Battery capacity needed
@@ -1354,7 +1354,6 @@
       report.push(`<div><span class="badge">Range</span> ${fmt(mphToDisplay(requirements.range), 0)} ${speedUnit === 'mph' ? 'mi' : 'km'} at ${fmt(mphToDisplay(requirements.rangeSpeed), 1)} ${unitLabel()} needs ≥<b>${fmt(AhNeeded, 1)}Ah</b> battery (${fmt(WhNeeded, 0)}Wh)</div>`);
     }
     
-    // Calculate battery specs
     const batteryAmp = (minMotorPower / constraints.motorEff) / constraints.batteryV;
     
     // Suggest specific gearing
