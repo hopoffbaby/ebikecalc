@@ -1294,7 +1294,7 @@
       const Paero = 0.5 * rho * CdA * vTop * vTop * vTop;
       const Proll = mass * g * Crr * vTop;
       const PtopTotal = Paero + Proll;
-      const PtopMotor = Math.max(0, PtopTotal - constraints.riderWatts);
+      const PtopMotor = Math.max(0, PtopTotal - constraints.riderW);
       
       minMotorPower = Math.max(minMotorPower, PtopMotor);
       
@@ -1316,12 +1316,12 @@
       const Proll = mass * g * Crr * vClimb;
       const Pgrav = mass * g * grade * vClimb;
       const PclimbTotal = Paero + Proll + Pgrav;
-      const PclimbMotor = Math.max(0, PclimbTotal - constraints.riderWatts);
+      const PclimbMotor = Math.max(0, PclimbTotal - constraints.riderW);
       
       minMotorPower = Math.max(minMotorPower, PclimbMotor);
       
       // Torque needed for climbing
-      const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderWatts) / vClimb;
+      const thrustNeeded = Math.max(0, PclimbTotal - constraints.riderW) / vClimb;
       const wheelTorqueNeeded = thrustNeeded * radius;
       const crankTorqueNeeded = wheelTorqueNeeded / constraints.driveEff;
       
@@ -1341,7 +1341,7 @@
       const Proll = mass * g * Crr * vRange;
       const Pgrav = mass * g * rangeGrade * vRange;
       const PrangeTotal = Paero + Proll + Pgrav;
-      const PrangeMotor = Math.max(0, PrangeTotal - constraints.riderWatts);
+      const PrangeMotor = Math.max(0, PrangeTotal - constraints.riderW);
       const PrangeBattery = PrangeMotor / constraints.motorEff;
       
       // Battery capacity needed
@@ -1451,9 +1451,26 @@
       efficiency: parseFloat($('#var_efficiency').value) / 100
     };
     
-    // Test targets (use current main form targets)
+    // Compute baseline achievable top speeds locally
+    const powerMode = $('#powerMode').value;
+    let baseMechPower = 0;
+    if (powerMode === 'va') {
+      baseMechPower = baseSpecs.voltage * baseSpecs.current * baseSpecs.motorEff;
+    } else {
+      baseMechPower = Math.max(0, parseFloat($('#mechW').value) || 0);
+    }
+    baseMechPower += baseSpecs.riderW;
+    
+    // Baseline top speeds
+    const vFlatBase = binSearchTopSpeedFlat(baseMechPower, baseSpecs.mass, 0.006, 1.20, 0.60);
+    const topFlatMphBase = vFlatBase * MPH_PER_MPS;
+    const minRear = Math.min(...baseSpecs.rearCogs);
+    const topGearRpmMpsBase = (baseSpecs.maxCadence * (baseSpecs.frontTeeth / minRear) * baseSpecs.wheelCirc) / 60;
+    const topGearRpmMphBase = topGearRpmMpsBase * MPH_PER_MPS;
+    
+    // Test targets (use achievable top speed as target)
     const targets = {
-      topSpeed: Math.min(mphToDisplay(topFlatMph), mphToDisplay(topGearRpmMph)), // Use actual achievable top speed
+      topSpeed: Math.min(topFlatMphBase, topGearRpmMphBase),
       climbGrade: 15, // 15% grade
       climbSpeed: getSpeedInputMph('climbMph')
     };
@@ -1471,7 +1488,7 @@
         mass: randomVariation(baseSpecs.mass, variations.mass),
         Crr: randomVariation(0.006, variations.rolling),
         CdA: randomVariation(0.60, variations.aero),
-        motorPower: randomVariation(baseSpecs.voltage * baseSpecs.current * baseSpecs.motorEff, variations.power),
+        motorPower: randomVariation(baseMechPower - baseSpecs.riderW, variations.power) + baseSpecs.riderW,
         crankTorque: randomVariation(baseSpecs.crankTorque, variations.torque),
         driveEff: Math.min(0.98, randomVariation(baseSpecs.driveEff, variations.efficiency)),
         motorEff: Math.min(0.95, randomVariation(baseSpecs.motorEff, variations.efficiency))
@@ -1490,13 +1507,13 @@
       const Pgrav = scenario.mass * g * grade * vClimb;
       const PneededTotal = Paero + Proll + Pgrav - baseSpecs.riderW;
       
-      if (PneededTotal > scenario.motorPower) {
+      if (PneededTotal > (scenario.motorPower - baseSpecs.riderW)) {
         scenarioPass = false;
         failures.power++;
       }
       
       // Torque requirement
-      const thrustNeeded = PneededTotal / vClimb;
+      const thrustNeeded = Math.max(0, PneededTotal) / vClimb;
       const wheelTorqueNeeded = thrustNeeded * (baseSpecs.wheelCirc / (2 * Math.PI));
       const crankTorqueNeeded = wheelTorqueNeeded / scenario.driveEff;
       
@@ -1511,7 +1528,7 @@
       
       // Check if the top gear can actually achieve the power-limited top speed
       const maxRatioForSpeed = (topSpeedMps * 60) / (baseSpecs.maxCadence * baseSpecs.wheelCirc);
-      const actualTopRatio = baseSpecs.frontTeeth / Math.min(...baseSpecs.rearCogs);
+      const actualTopRatio = baseSpecs.frontTeeth / minRear;
       
       // Only fail RPM test if the gear ratio prevents reaching the power-limited speed
       // AND the power-limited speed is above our target
