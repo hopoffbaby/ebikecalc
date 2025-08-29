@@ -50,10 +50,12 @@
     font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:4px
   }
   input,select,button{
-    width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #223044;background:#0d131b;
-    color:var(--ink);padding:10px 12px;font-size:14px;outline:none
+    width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #3a4b60;background:#1a2634;
+    color:#ffffff;padding:10px 12px;font-size:14px;outline:none;font-weight:500
   }
-  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #4da3ff22}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #4da3ff22;background:#203040}
+  input:hover,select:hover{border-color:#4a5b70;background:#1f2e3f}
+  input[disabled],select[disabled]{background:#0f1a25;color:#8a9aa6;border-color:#2a3540;opacity:0.7}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .btn{
     position:relative;background:linear-gradient(180deg,#49a0ff,#2a6fbf);color:#001b33;border:none;font-weight:700;cursor:pointer
@@ -65,6 +67,40 @@
 
   .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#162131;border:1px solid #223044;color:var(--ink);font-size:12px;cursor:pointer}
   .section-title{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:4px 0 8px;display:flex;align-items:center;gap:6px}
+  
+  /* Enhanced section styling */
+  .input-section{
+    background:rgba(29, 44, 63, 0.6);
+    border:1px solid #1a2634;
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+    position:relative;
+    transition:all .25s ease;
+  }
+  .input-section:hover{
+    background:rgba(37, 78, 134, 0.8);
+    border-color:#2a3b55;
+  }
+  .input-section .section-title{
+    margin:-4px 0 12px 0;
+    font-size:14px;
+    font-weight:600;
+    color:var(--accent2);
+  }
+  .section-icon{
+    width:18px;
+    height:18px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    color:var(--accent);
+    background:rgba(77,163,255,.15);
+    border-radius:6px;
+    flex-shrink:0;
+  }
+  
   canvas{width:100%;height:260px;border-radius:12px;background:#0b1118;border:1px solid #182232;box-shadow:inset 0 0 0 1px #ffffff08}
   table{width:100%;border-collapse:collapse;font-size:12px}
   th,td{padding:6px 8px;border-bottom:1px solid #1a2634;text-align:right}
@@ -160,74 +196,135 @@
 <main class="grid">
   <!-- LEFT PANEL -->
   <section class="card">
-    <div class="section-title">Bike & Drivetrain</div>
-    <div class="inputs">
-      <div><label for="wheelPreset">Wheel size preset</label>
-        <select id="wheelPreset">
-          <option value="2100">26″ (≈2100 mm)</option>
-          <option value="2230">27.5″ (≈2230 mm)</option>
-          <option value="2310">29″ / 700c (≈2310 mm)</option>
-          <option value="custom">Use custom circumference</option>
-        </select>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🚲</span>
+        Bike
       </div>
-      <div><label for="circumference">Custom circumference (mm)</label><input id="circumference" type="number" placeholder="e.g. 2100" min="1" step="1"></div>
-      <div><label for="frontTeeth">Front chainring teeth</label><input id="frontTeeth" type="number" value="40" min="22" max="60" step="1"></div>
-      <div><label for="rearCogs">Rear cogs (teeth, CSV)</label><input id="rearCogs" class="full" type="text" value="13,14,16,18,21,24,28,34" inputmode="numeric"></div>
-    </div>
-
-    <div class="section-title">Rider & Physics</div>
-    <div class="inputs">
-      <div><label for="mass">Total mass (kg)</label><input id="mass" type="number" value="160" min="1" step="0.1"></div>
-      <div><label for="riderW">Rider watts</label><input id="riderW" type="number" value="0" min="0" step="1"></div>
-      <div><label for="climbMph"><span id="lbl_climb">Target climb speed (mph)</span></label><input id="climbMph" type="number" value="3" min="0" step="0.1"></div>
-    </div>
-
-    <div class="section-title">Motor & Power</div>
-    <div class="inputs">
-      <div class="full"><label for="powerMode">Power entry mode</label>
-        <select id="powerMode">
-          <option value="va">Voltage × Current × Efficiency (battery-based)</option>
-          <option value="mech">Direct mechanical watts (at the shaft)</option>
-        </select>
+      <div class="inputs">
+        <div><label for="wheelPreset">Wheel size preset</label>
+          <select id="wheelPreset">
+            <option value="2100">26″ (≈2100 mm)</option>
+            <option value="2230">27.5″ (≈2230 mm)</option>
+            <option value="2310">29″ / 700c (≈2310 mm)</option>
+            <option value="custom">Use custom circumference</option>
+          </select>
+        </div>
+        <div><label for="circumference">Custom circumference (mm)</label><input id="circumference" type="number" placeholder="e.g. 2100" min="1" step="1"></div>
       </div>
-      <div><label for="voltage">Battery voltage (V)</label><input id="voltage" type="number" value="52" min="0" step="0.1"></div>
-      <div><label for="current">Controller current (A)</label><input id="current" type="number" value="30" min="0" step="0.1"></div>
-      <div><label for="motorEff">Motor+controller efficiency</label><input id="motorEff" type="number" step="0.01" value="0.82" min="0" max="1"></div>
-      <div><label for="mechW">Mechanical watts (if using direct)</label><input id="mechW" type="number" value="1280" min="0" step="1"></div>
-      <div><label for="crankTorque">Crank torque (Nm)</label><input id="crankTorque" type="number" value="160" min="0" step="0.1"></div>
-      <div><label for="driveEff">Drivetrain efficiency</label><input id="driveEff" type="number" step="0.01" value="0.95" min="0" max="1"></div>
-      <div><label for="maxCadence">Max chainring rpm</label><input id="maxCadence" type="number" value="140" min="0" step="1"></div>
     </div>
 
-    <div class="section-title">Battery & Range</div>
-    <div class="inputs">
-      <div><label for="batAh">Battery capacity (Ah)</label><input id="batAh" type="number" value="20" min="0" step="0.1"></div>
-      <div><label for="usablePct">Usable % (leave reserve)</label><input id="usablePct" type="number" value="85" min="0" max="100" step="1"></div>
-      <div><label for="rangeMph"><span id="lbl_range">Range cruise speed (mph)</span></label><input id="rangeMph" type="number" value="20" min="0" step="0.1"></div>
-      <div><label for="rangeGradePct">Target climb grade for range (%)</label><input id="rangeGradePct" type="number" value="10" min="0" step="0.1"></div>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">⚙️</span>
+        Drivetrain
+      </div>
+      <div class="inputs">
+        <div><label for="frontTeeth">Front chainring teeth</label><input id="frontTeeth" type="number" value="40" min="22" max="60" step="1"></div>
+        <div><label for="rearCogs">Rear cogs (teeth, CSV)</label><input id="rearCogs" class="full" type="text" value="13,14,16,18,21,24,28,34" inputmode="numeric"></div>
+        <div><label for="driveEff">Drivetrain efficiency</label><input id="driveEff" type="number" step="0.01" value="0.95" min="0" max="1"></div>
+      </div>
     </div>
 
-    <div class="section-title">Presets & Share</div>
-    <div class="row">
-      <button class="pill" data-rear="14,16,18,20,22,24,26">7-spd 14–26</button>
-      <button class="pill" data-rear="13,14,16,18,21,24,28,34">MegaRange 13–34</button>
-      <button class="pill" data-rear="12,14,16,18,21,24,28,32">8-spd 12–32</button>
-      <button class="pill" id="preset_power">52 V × 30 A (0.82)</button>
-      <button class="pill" id="preset_rpm">Spec: 150 rpm</button>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <input id="presetName" placeholder="Preset name" style="max-width:220px" aria-label="Preset name">
-      <button id="savePreset" class="btn secondary" type="button">Save</button>
-      <select id="loadPreset" style="max-width:220px"><option value="">Load preset…</option></select>
-      <button id="deletePreset" class="btn secondary" type="button">Delete</button>
-      <button id="shareBtn" class="btn" type="button">Share</button>
-      <span id="shareMsg" class="small muted" role="status" aria-live="polite"></span>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">👤</span>
+        Rider
+      </div>
+      <div class="inputs">
+        <div><label for="mass">Total mass (kg)</label><input id="mass" type="number" value="160" min="1" step="0.1"></div>
+        <div><label for="riderW">Rider watts</label><input id="riderW" type="number" value="0" min="0" step="1"></div>
+      </div>
     </div>
 
-    <div class="row" style="margin-top:10px">
-      <button id="computeBtn" class="btn" type="button">Compute</button>
-      <button id="resetBtn" class="btn secondary" type="button">Reset defaults</button>
-      <button id="exportCsv" class="btn secondary" type="button">Export CSV</button>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">📈</span>
+        Grades
+      </div>
+      <div class="inputs">
+        <div><label for="climbMph"><span id="lbl_climb">Target climb speed (mph)</span></label><input id="climbMph" type="number" value="3" min="0" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">⚡</span>
+        Motor
+      </div>
+      <div class="inputs">
+        <div><label for="crankTorque">Crank torque (Nm)</label><input id="crankTorque" type="number" value="160" min="0" step="0.1"></div>
+        <div><label for="maxCadence">Max chainring rpm</label><input id="maxCadence" type="number" value="140" min="0" step="1"></div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🔌</span>
+        Power
+      </div>
+      <div class="inputs">
+        <div class="full"><label for="powerMode">Power entry mode</label>
+          <select id="powerMode">
+            <option value="va">Voltage × Current × Efficiency (battery-based)</option>
+            <option value="mech">Direct mechanical watts (at the shaft)</option>
+          </select>
+        </div>
+        <div><label for="voltage">Battery voltage (V)</label><input id="voltage" type="number" value="52" min="0" step="0.1"></div>
+        <div><label for="current">Controller current (A)</label><input id="current" type="number" value="30" min="0" step="0.1"></div>
+        <div><label for="motorEff">Motor+controller efficiency</label><input id="motorEff" type="number" step="0.01" value="0.82" min="0" max="1"></div>
+        <div><label for="mechW">Mechanical watts (if using direct)</label><input id="mechW" type="number" value="1280" min="0" step="1"></div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🔋</span>
+        Battery
+      </div>
+      <div class="inputs">
+        <div><label for="batAh">Battery capacity (Ah)</label><input id="batAh" type="number" value="20" min="0" step="0.1"></div>
+        <div><label for="usablePct">Usable % (leave reserve)</label><input id="usablePct" type="number" value="85" min="0" max="100" step="1"></div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">📏</span>
+        Range
+      </div>
+      <div class="inputs">
+        <div><label for="rangeMph"><span id="lbl_range">Range cruise speed (mph)</span></label><input id="rangeMph" type="number" value="20" min="0" step="0.1"></div>
+        <div><label for="rangeGradePct">Target climb grade for range (%)</label><input id="rangeGradePct" type="number" value="10" min="0" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">💾</span>
+        Presets & Share
+      </div>
+      <div class="row">
+        <button class="pill" data-rear="14,16,18,20,22,24,26">7-spd 14–26</button>
+        <button class="pill" data-rear="13,14,16,18,21,24,28,34">MegaRange 13–34</button>
+        <button class="pill" data-rear="12,14,16,18,21,24,28,32">8-spd 12–32</button>
+        <button class="pill" id="preset_power">52 V × 30 A (0.82)</button>
+        <button class="pill" id="preset_rpm">Spec: 150 rpm</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input id="presetName" placeholder="Preset name" style="max-width:220px" aria-label="Preset name">
+        <button id="savePreset" class="btn secondary" type="button">Save</button>
+        <select id="loadPreset" style="max-width:220px"><option value="">Load preset…</option></select>
+        <button id="deletePreset" class="btn secondary" type="button">Delete</button>
+        <button id="shareBtn" class="btn" type="button">Share</button>
+        <span id="shareMsg" class="small muted" role="status" aria-live="polite"></span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="computeBtn" class="btn" type="button">Compute</button>
+        <button id="resetBtn" class="btn secondary" type="button">Reset defaults</button>
+        <button id="exportCsv" class="btn secondary" type="button">Export CSV</button>
+      </div>
     </div>
   </section>
 
@@ -306,47 +403,58 @@
 
   <!-- Reverse engineer -->
   <section class="card">
-    <div class="section-title">Reverse engineer gearing</div>
-    <div class="inputs">
-      <div><label for="targetTopMph"><span id="lbl_targetTop">Target top speed (mph)</span></label><input id="targetTopMph" type="number" value="29" min="0" step="0.1"></div>
-      <div><label for="targetGradePct">Target climb grade (%)</label><input id="targetGradePct" type="number" value="15" min="0" step="0.1"></div>
-      <div class="full"><label for="fixedWhat">What is fixed?</label>
-        <select id="fixedWhat">
-          <option value="none">Nothing (suggest both)</option>
-          <option value="ring">Chainring is fixed</option>
-          <option value="cassette">Cassette extremes are fixed</option>
-        </select>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🔄</span>
+        Reverse engineer gearing
       </div>
-      <div><label for="fixedRing">Fixed ring (T)</label><input id="fixedRing" type="number" value="40" min="1" step="1"></div>
-      <div><label for="fixedSmall">Fixed cassette small (T)</label><input id="fixedSmall" type="number" value="13" min="1" step="1"></div>
-      <div><label for="fixedLarge">Fixed cassette large (T)</label><input id="fixedLarge" type="number" value="34" min="1" step="1"></div>
-      <div class="full"><button id="solveBtn" class="btn" type="button">Solve gearing</button></div>
+      <div class="inputs">
+        <div><label for="targetTopMph"><span id="lbl_targetTop">Target top speed (mph)</span></label><input id="targetTopMph" type="number" value="29" min="0" step="0.1"></div>
+        <div><label for="targetGradePct">Target climb grade (%)</label><input id="targetGradePct" type="number" value="15" min="0" step="0.1"></div>
+        <div class="full"><label for="fixedWhat">What is fixed?</label>
+          <select id="fixedWhat">
+            <option value="none">Nothing (suggest both)</option>
+            <option value="ring">Chainring is fixed</option>
+            <option value="cassette">Cassette extremes are fixed</option>
+          </select>
+        </div>
+        <div><label for="fixedRing">Fixed ring (T)</label><input id="fixedRing" type="number" value="40" min="1" step="1"></div>
+        <div><label for="fixedSmall">Fixed cassette small (T)</label><input id="fixedSmall" type="number" value="13" min="1" step="1"></div>
+        <div><label for="fixedLarge">Fixed cassette large (T)</label><input id="fixedLarge" type="number" value="34" min="1" step="1"></div>
+        <div class="full"><button id="solveBtn" class="btn" type="button">Solve gearing</button></div>
+      </div>
+      <div id="solveOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
     </div>
-    <div id="solveOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
   </section>
 
   <!-- Uncertainty -->
   <section class="card">
-    <div class="section-title">Uncertainty sweeps (multi-scenario)</div>
-    <div class="inputs">
-      <div><label for="N"># samples</label><input id="N" type="number" value="300" min="10" step="1"></div>
-      <div><label for="u_mass_min">Mass min (kg)</label><input id="u_mass_min" type="number" value="150" min="1" step="0.1"></div>
-      <div><label for="u_mass_max">Mass max (kg)</label><input id="u_mass_max" type="number" value="170" min="1" step="0.1"></div>
-      <div><label for="u_rpm_min">Max chainring rpm min</label><input id="u_rpm_min" type="number" value="130" min="0" step="1"></div>
-      <div><label for="u_rpm_max">Max chainring rpm max</label><input id="u_rpm_max" type="number" value="150" min="0" step="1"></div>
-      <div><label for="u_V_min">Voltage min</label><input id="u_V_min" type="number" value="50" min="0" step="0.1"></div>
-      <div><label for="u_V_max">Voltage max</label><input id="u_V_max" type="number" value="58" min="0" step="0.1"></div>
-      <div><label for="u_A_min">Current min</label><input id="u_A_min" type="number" value="28" min="0" step="0.1"></div>
-      <div><label for="u_A_max">Current max</label><input id="u_A_max" type="number" value="35" min="0" step="0.1"></div>
-      <div><label for="u_eff_min">Eff min</label><input id="u_eff_min" type="number" step="0.01" value="0.78" min="0" max="1"></div>
-      <div><label for="u_eff_max">Eff max</label><input id="u_eff_max" type="number" step="0.01" value="0.85" min="0" max="1"></div>
-      <div><label for="u_T_min">Crank torque min (Nm)</label><input id="u_T_min" type="number" value="140" min="0" step="0.1"></div>
-      <div><label for="u_T_max">Crank torque max (Nm)</label><input id="u_T_max" type="number" value="170" min="0" step="0.1"></div>
-      <div><label for="u_RW_min">Rider W min</label><input id="u_RW_min" type="number" value="0" min="0" step="1"></div>
-      <div><label for="u_RW_max">Rider W max</label><input id="u_RW_max" type="number" value="150" min="0" step="1"></div>
-      <div class="full"><button id="uncBtn" class="btn" type="button">Run uncertainty</button></div>
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🎲</span>
+        Uncertainty sweeps (multi-scenario)
+      </div>
+      <div class="note" style="margin-bottom:12px">Use this to simulate uncertainty by running many scenarios with ranges for key variables. Set min/max for each, then click Run to get the percentage of scenarios that meet your targets and gearing suggestions for robust design. The coverage shows reliability, and the design recommendations help choose components that work across variations.</div>
+      <div class="inputs">
+        <div><label for="N"># samples</label><input id="N" type="number" value="300" min="10" step="1"></div>
+        <div><label for="u_mass_min">Mass min (kg)</label><input id="u_mass_min" type="number" value="150" min="1" step="0.1"></div>
+        <div><label for="u_mass_max">Mass max (kg)</label><input id="u_mass_max" type="number" value="170" min="1" step="0.1"></div>
+        <div><label for="u_rpm_min">Max chainring rpm min</label><input id="u_rpm_min" type="number" value="130" min="0" step="1"></div>
+        <div><label for="u_rpm_max">Max chainring rpm max</label><input id="u_rpm_max" type="number" value="150" min="0" step="1"></div>
+        <div><label for="u_V_min">Voltage min</label><input id="u_V_min" type="number" value="50" min="0" step="0.1"></div>
+        <div><label for="u_V_max">Voltage max</label><input id="u_V_max" type="number" value="58" min="0" step="0.1"></div>
+        <div><label for="u_A_min">Current min</label><input id="u_A_min" type="number" value="28" min="0" step="0.1"></div>
+        <div><label for="u_A_max">Current max</label><input id="u_A_max" type="number" value="35" min="0" step="0.1"></div>
+        <div><label for="u_eff_min">Eff min</label><input id="u_eff_min" type="number" step="0.01" value="0.78" min="0" max="1"></div>
+        <div><label for="u_eff_max">Eff max</label><input id="u_eff_max" type="number" step="0.01" value="0.85" min="0" max="1"></div>
+        <div><label for="u_T_min">Crank torque min (Nm)</label><input id="u_T_min" type="number" value="140" min="0" step="0.1"></div>
+        <div><label for="u_T_max">Crank torque max (Nm)</label><input id="u_T_max" type="number" value="170" min="0" step="0.1"></div>
+        <div><label for="u_RW_min">Rider W min</label><input id="u_RW_min" type="number" value="0" min="0" step="1"></div>
+        <div><label for="u_RW_max">Rider W max</label><input id="u_RW_max" type="number" value="150" min="0" step="1"></div>
+        <div class="full"><button id="uncBtn" class="btn" type="button">Run uncertainty</button></div>
+      </div>
+      <div id="uncOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
     </div>
-    <div id="uncOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
   </section>
 </main>
 
