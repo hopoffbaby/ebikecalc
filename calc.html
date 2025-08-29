@@ -401,6 +401,137 @@
     </div>
   </section>
 
+  <!-- System Designer -->
+  <section class="card">
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🎯</span>
+        System Designer — Requirements → Specs
+      </div>
+      <div class="note" style="margin-bottom:12px">Define your riding requirements and let the system calculate the minimum motor specs, gearing, and battery needed. Check the boxes for requirements you want to enforce.</div>
+      
+      <!-- Requirements Input -->
+      <div class="inputs">
+        <div class="full" style="background: rgba(77,163,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+          <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">Riding Requirements</div>
+          <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;">
+            <input type="checkbox" id="req_weight" style="width: auto;">
+            <label for="req_weight" style="margin: 0;">Total weight (kg)</label>
+            <input id="sys_weight" type="number" value="160" min="50" max="300" step="1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_topSpeed" style="width: auto;">
+            <label for="req_topSpeed" style="margin: 0;"><span id="lbl_sys_topSpeed">Target top speed (mph)</span></label>
+            <input id="sys_topSpeed" type="number" value="30" min="5" max="50" step="0.1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_climbSpeed" style="width: auto;">
+            <label for="req_climbSpeed" style="margin: 0;"><span id="lbl_sys_climbSpeed">Climb speed (mph)</span></label>
+            <input id="sys_climbSpeed" type="number" value="6" min="1" max="15" step="0.1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_climbGrade" style="width: auto;">
+            <label for="req_climbGrade" style="margin: 0;">Target climb grade (%)</label>
+            <input id="sys_climbGrade" type="number" value="15" min="5" max="40" step="1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_range" style="width: auto;">
+            <label for="req_range" style="margin: 0;"><span id="lbl_sys_range">Range (miles)</span></label>
+            <input id="sys_range" type="number" value="50" min="10" max="200" step="1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_rangeSpeed" style="width: auto;">
+            <label for="req_rangeSpeed" style="margin: 0;"><span id="lbl_sys_rangeSpeed">Range cruise speed (mph)</span></label>
+            <input id="sys_rangeSpeed" type="number" value="20" min="5" max="30" step="0.1" style="width: 80px;">
+            
+            <input type="checkbox" id="req_rangeGrade" style="width: auto;">
+            <label for="req_rangeGrade" style="margin: 0;">Range grade (%)</label>
+            <input id="sys_rangeGrade" type="number" value="5" min="0" max="20" step="1" style="width: 80px;">
+          </div>
+        </div>
+        
+        <div class="full" style="background: rgba(125,255,176,0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+          <div style="font-weight: 600; color: var(--accent2); margin-bottom: 8px;">Constraints & Preferences</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div><label for="sys_wheelSize">Wheel size</label>
+              <select id="sys_wheelSize">
+                <option value="2100">26″ (≈2100 mm)</option>
+                <option value="2230">27.5″ (≈2230 mm)</option>
+                <option value="2310" selected>29″ / 700c (≈2310 mm)</option>
+              </select>
+            </div>
+            <div><label for="sys_riderWatts">Rider contribution (W)</label>
+              <input id="sys_riderWatts" type="number" value="100" min="0" max="400" step="10">
+            </div>
+            <div><label for="sys_chainringMin">Min chainring size (T)</label>
+              <input id="sys_chainringMin" type="number" value="32" min="28" max="60" step="2">
+            </div>
+            <div><label for="sys_chainringMax">Max chainring size (T)</label>
+              <input id="sys_chainringMax" type="number" value="52" min="32" max="70" step="2">
+            </div>
+            <div><label for="sys_maxRpm">Max acceptable chainring RPM</label>
+              <input id="sys_maxRpm" type="number" value="150" min="100" max="200" step="5">
+            </div>
+            <div><label for="sys_efficiency">Expected drivetrain efficiency</label>
+              <input id="sys_efficiency" type="number" value="0.93" min="0.85" max="0.98" step="0.01">
+            </div>
+            <div><label for="sys_motorEff">Expected motor efficiency</label>
+              <input id="sys_motorEff" type="number" value="0.82" min="0.70" max="0.95" step="0.01">
+            </div>
+            <div><label for="sys_batteryV">Preferred battery voltage (V)</label>
+              <input id="sys_batteryV" type="number" value="52" min="36" max="72" step="1">
+            </div>
+          </div>
+        </div>
+        
+        <div class="full"><button id="designBtn" class="btn" type="button">Design System</button></div>
+      </div>
+      <div id="designOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Enhanced Uncertainty -->
+  <section class="card">
+    <div class="input-section">
+      <div class="section-title">
+        <span class="section-icon">🎲</span>
+        Robustness Analysis — Multi-scenario validation
+      </div>
+      <div class="note" style="margin-bottom:12px">Test your system design across realistic variations in conditions and component specs. This validates that your chosen configuration will work reliably in real-world scenarios with manufacturing tolerances, environmental changes, and usage variations.</div>
+      <div class="inputs">
+        <div><label for="N"># scenarios to test</label><input id="N" type="number" value="500" min="50" step="50"></div>
+        
+        <div class="full" style="background: rgba(255,184,77,0.1); padding: 12px; border-radius: 8px; margin: 8px 0;">
+          <div style="font-weight: 600; color: var(--warn); margin-bottom: 8px;">Environmental & Usage Variations (±%)</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <div><label for="var_mass">Mass variation (±%)</label>
+              <input id="var_mass" type="number" value="10" min="0" max="30" step="1">
+            </div>
+            <div><label for="var_aero">Aerodynamic drag (±%)</label>
+              <input id="var_aero" type="number" value="20" min="0" max="50" step="5">
+            </div>
+            <div><label for="var_rolling">Rolling resistance (±%)</label>
+              <input id="var_rolling" type="number" value="15" min="0" max="30" step="5">
+            </div>
+          </div>
+        </div>
+        
+        <div class="full" style="background: rgba(255,107,107,0.1); padding: 12px; border-radius: 8px; margin: 8px 0;">
+          <div style="font-weight: 600; color: var(--danger); margin-bottom: 8px;">Component Tolerances (±%)</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <div><label for="var_torque">Motor torque (±%)</label>
+              <input id="var_torque" type="number" value="8" min="0" max="20" step="1">
+            </div>
+            <div><label for="var_power">Motor power (±%)</label>
+              <input id="var_power" type="number" value="10" min="0" max="25" step="1">
+            </div>
+            <div><label for="var_efficiency">Efficiency (±%)</label>
+              <input id="var_efficiency" type="number" value="5" min="0" max="15" step="1">
+            </div>
+          </div>
+        </div>
+        
+        <div class="full"><button id="robustnessBtn" class="btn" type="button">Run Robustness Analysis</button></div>
+      </div>
+      <div id="robustnessOut" class="note" style="margin-top:8px" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
   <!-- Reverse engineer -->
   <section class="card">
     <div class="input-section">
@@ -436,7 +567,7 @@
       </div>
       <div class="note" style="margin-bottom:12px">Use this to simulate uncertainty by running many scenarios with ranges for key variables. Set min/max for each, then click Run to get the percentage of scenarios that meet your targets and gearing suggestions for robust design. The coverage shows reliability, and the design recommendations help choose components that work across variations.</div>
       <div class="inputs">
-        <div><label for="N"># samples</label><input id="N" type="number" value="300" min="10" step="1"></div>
+        <div><label for="u_N"># samples</label><input id="u_N" type="number" value="300" min="10" step="1"></div>
         <div><label for="u_mass_min">Mass min (kg)</label><input id="u_mass_min" type="number" value="150" min="1" step="0.1"></div>
         <div><label for="u_mass_max">Mass max (kg)</label><input id="u_mass_max" type="number" value="170" min="1" step="0.1"></div>
         <div><label for="u_rpm_min">Max chainring rpm min</label><input id="u_rpm_min" type="number" value="130" min="0" step="1"></div>
@@ -514,6 +645,7 @@
     $('#lbl_range').textContent = `Range cruise speed (${unitLabel()})`;
     $('#lbl_targetTop').textContent = `Target top speed (${unitLabel()})`;
     $('#th_top').textContent = `Top speed (${unitLabel()})`;
+    setSystemLabels();
   }
   function getSpeedInputMph(id){
     const val = parseFloat($('#'+id).value) || 0;
@@ -1099,7 +1231,7 @@
       const h = Math.floor(hours);
       const mins = Math.floor((hours - h)*60);
       text = `
-        <div><span class="badge">Usable energy</span> <b>${fmt(usableWh,0)} Wh</b></div>
+        <div><span class="badge">Usable energy</span> <b>${(usableWh).toFixed(0)} Wh</b></div>
         <div style="height:6px"></div>
         <div><span class="badge">Cruise @ ${fmt(mphToDisplay(cruiseMph),1)} ${unitLabel()}, grade ${fmt(grade*100,1)}%</span> 
           battery draw ≈ <b>${fmt(P_batt,0)} W</b> • ride time ≈ <b>${h}h ${mins}m</b></div>
@@ -1111,190 +1243,329 @@
   }
 
   /* ---------- Solver & Uncertainty ---------- */
-  function solve(){
-    const circ=getCirc(), radius=circ/(2*Math.PI);
-    const m=parseFloat($('#mass').value), Crr=0.006, CdA=0.60, rho=1.20;
-    const riderW=Math.max(0,parseFloat($('#riderW').value));
-    const Tcrank=parseFloat($('#crankTorque').value), eff=parseFloat($('#driveEff').value);
-    const V=parseFloat($('#voltage').value), A=parseFloat($('#current').value), motorEff=parseFloat($('#motorEff').value);
-    const maxCad=parseFloat($('#maxCadence').value);
-    const climbMph=getSpeedInputMph('climbMph'), v=climbMph*MPS_PER_MPH;
-    const targetTopMph=getSpeedInputMph('targetTopMph'), targetGrade=(parseFloat($('#targetGradePct').value)||0)/100;
-    const fixedWhat=$('#fixedWhat').value;
-    const fixedRing=parseInt($('#fixedRing').value,10);
-    const fixedSmall=parseInt($('#fixedSmall').value,10);
-    const fixedLarge=parseInt($('#fixedLarge').value,10);
-
-    const mode=$('#powerMode').value;
-    let P_mech=0;
-    if(mode==='va'){ P_mech=V*A*motorEff; } else { P_mech=Math.max(0,parseFloat($('#mechW').value)||0); }
-    P_mech += riderW;
-
-    const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
-    const topFlatMph = vFlat*MPH_PER_MPS;
-    const needTopMps = targetTopMph * MPS_PER_MPH;
-    const ratioReq = needTopMps*60/(maxCad*circ);
-    const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
-
-    function pickSmall(front){
-      const maxSmall = Math.floor(front/ratioReq);
-      const cand = stdSmall.filter(s=>s<=maxSmall);
-      return cand.length? Math.max(...cand) : null;
+  function designSystem(){
+    const requirements = {
+      weight: $('#req_weight').checked ? parseFloat($('#sys_weight').value) : null,
+      topSpeed: $('#req_topSpeed').checked ? getSpeedInputFromDisplay($('#sys_topSpeed').value) : null,
+      climbSpeed: $('#req_climbSpeed').checked ? getSpeedInputFromDisplay($('#sys_climbSpeed').value) : null,
+      climbGrade: $('#req_climbGrade').checked ? parseFloat($('#sys_climbGrade').value) / 100 : null,
+      range: $('#req_range').checked ? (speedUnit === 'mph' ? parseFloat($('#sys_range').value) : parseFloat($('#sys_range').value) / 1.609344) : null,
+      rangeSpeed: $('#req_rangeSpeed').checked ? getSpeedInputFromDisplay($('#sys_rangeSpeed').value) : null,
+      rangeGrade: $('#req_rangeGrade').checked ? parseFloat($('#sys_rangeGrade').value) / 100 : null
+    };
+    
+    const constraints = {
+      wheelCirc: parseFloat($('#sys_wheelSize').value) / 1000,
+      riderWatts: parseFloat($('#sys_riderWatts').value),
+      chainringMin: parseFloat($('#sys_chainringMin').value) || 32,
+      chainringMax: parseFloat($('#sys_chainringMax').value) || 52,
+      maxRpm: parseFloat($('#sys_maxRpm').value),
+      driveEff: parseFloat($('#sys_efficiency').value),
+      motorEff: parseFloat($('#sys_motorEff').value),
+      batteryV: parseFloat($('#sys_batteryV').value)
+    };
+    
+    // Physics constants
+    const g = 9.80665;
+    const Crr = 0.006; // Rolling resistance
+    const CdA = 0.60;  // Aerodynamic drag
+    const rho = 1.20;  // Air density
+    const radius = constraints.wheelCirc / (2 * Math.PI);
+    
+    // Required power calculations
+    let minMotorPower = 0;
+    let minTorque = 0;
+    let minBatteryAh = 0;
+    let suggestedGearing = {};
+    let report = [];
+    
+    // 1. Top speed requirement
+    if (requirements.topSpeed) {
+      const vTop = requirements.topSpeed * MPS_PER_MPH;
+      const mass = requirements.weight || 160;
+      
+      // Power needed for top speed (aerodynamic + rolling)
+      const Paero = 0.5 * rho * CdA * vTop * vTop * vTop;
+      const Proll = mass * g * Crr * vTop;
+      const PtopTotal = Paero + Proll - constraints.riderWatts;
+      const PtopMotor = Math.max(0, PtopTotal);
+      
+      minMotorPower = Math.max(minMotorPower, PtopMotor);
+      
+      // Gearing for top speed
+      const topRatio = (vTop * 60) / (constraints.maxRpm * constraints.wheelCirc);
+      suggestedGearing.topSpeedRatio = topRatio;
+      
+      report.push(`<div><span class="badge">Top Speed</span> ${fmt(mphToDisplay(requirements.topSpeed), 1)} ${unitLabel()} needs ≥<b>${fmt(PtopMotor, 0)}W</b> motor power, gear ratio ≤<b>${fmt(topRatio, 2)}</b></div>`);
     }
-    function pickLarge(front){
-      const rearNeeded = Math.ceil(front * Tw_req/(Tcrank*eff));
-      const cand = stdLarge.filter(L=>L>=rearNeeded);
-      return cand.length? Math.min(...cand) : null;
+    
+    // 2. Climb requirement
+    if (requirements.climbSpeed && requirements.climbGrade) {
+      const vClimb = requirements.climbSpeed * MPS_PER_MPH;
+      const grade = requirements.climbGrade;
+      const mass = requirements.weight || 160;
+      
+      // Power needed for climbing
+      const Paero = 0.5 * rho * CdA * vClimb * vClimb * vClimb;
+      const Proll = mass * g * Crr * vClimb;
+      const Pgrav = mass * g * grade * vClimb;
+      const PclimbTotal = Paero + Proll + Pgrav - constraints.riderWatts;
+      const PclimbMotor = Math.max(0, PclimbTotal);
+      
+      minMotorPower = Math.max(minMotorPower, PclimbMotor);
+      
+      // Torque needed for climbing
+      const thrustNeeded = Math.max(0, (Paero + Proll + Pgrav - constraints.riderWatts) / vClimb);
+      const wheelTorqueNeeded = thrustNeeded * radius;
+      const crankTorqueNeeded = wheelTorqueNeeded / constraints.driveEff;
+      
+      minTorque = Math.max(minTorque, crankTorqueNeeded);
+      
+      report.push(`<div><span class="badge">Climbing</span> ${fmt(grade * 100, 1)}% at ${fmt(mphToDisplay(requirements.climbSpeed), 1)} ${unitLabel()} needs ≥<b>${Math.round(PclimbMotor)}W</b> motor power, ≥<b>${Math.round(crankTorqueNeeded)}Nm</b> crank torque</div>`);
     }
+    
+    // 3. Range requirement
+    if (requirements.range && requirements.rangeSpeed) {
+      const vRange = requirements.rangeSpeed * MPS_PER_MPH;
+      const mass = requirements.weight || 160;
+      const rangeGrade = requirements.rangeGrade || 0;
+      
+      // Power needed for range cruise
+      const Paero = 0.5 * rho * CdA * vRange * vRange * vRange;
+      const Proll = mass * g * Crr * vRange;
+      const Pgrav = mass * g * rangeGrade * vRange;
+      const PrangeTotal = Paero + Proll + Pgrav - constraints.riderW;
+      const PrangeMotor = Math.max(0, PrangeTotal);
+      const PrangeBattery = PrangeMotor / constraints.motorEff;
+      
+      // Battery capacity needed
+      const hours = requirements.range / requirements.rangeSpeed;
+      const WhNeeded = PrangeBattery * hours;
+      const AhNeeded = WhNeeded / constraints.batteryV;
+      
+      minBatteryAh = Math.max(minBatteryAh, AhNeeded);
+      
+      report.push(`<div><span class="badge">Range</span> ${fmt(mphToDisplay(requirements.range), 0)} ${speedUnit === 'mph' ? 'mi' : 'km'} at ${fmt(mphToDisplay(requirements.rangeSpeed), 1)} ${unitLabel()} needs ≥<b>${fmt(AhNeeded, 1)}Ah</b> battery (${fmt(WhNeeded, 0)}Wh)</div>`);
+    }
+    
+    // Calculate battery specs
+    const batteryAmp = (minMotorPower / constraints.motorEff) / constraints.batteryV;
+    
+    // Suggest specific gearing
+    if (suggestedGearing.topSpeedRatio) {
+      // Find reasonable chainring and cassette within constraints
+      const targetRatio = suggestedGearing.topSpeedRatio;
+      let bestGearing = null;
+      
+      // Use the user-specified chainring range
+      const minChainring = Math.max(constraints.chainringMin, 28);
+      const maxChainring = Math.min(constraints.chainringMax, 70);
+      
+      for (let chainring = minChainring; chainring <= maxChainring; chainring += 2) {
+        const maxRear = Math.round(chainring / targetRatio);
+        const minRear = Math.max(11, Math.round(maxRear * 0.35)); // Reasonable range
+        
+        if (maxRear <= 50 && minRear >= 11) {
+          bestGearing = { chainring, minRear, maxRear };
+          break;
+        }
+      }
+      
+      if (bestGearing) {
+        suggestedGearing.recommendation = `${bestGearing.chainring}T chainring with ${bestGearing.minRear}-${bestGearing.maxRear}T cassette`;
+      } else {
+        // If no solution found, suggest relaxing constraints
+        suggestedGearing.recommendation = `No suitable gearing found within ${constraints.chainringMin}-${constraints.chainringMax}T chainring range. Consider expanding chainring size limits.`;
+      }
+    }
+    
+    // Generate comprehensive report
+    let output = `<div style="background: rgba(125,255,176,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+      <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">Minimum System Requirements</div>
+      ${report.join('')}
+    </div>`;
+    
+    if (minMotorPower > 0) {
+      const electricalPower = minMotorPower / constraints.motorEff;
+      output += `<div style="background: rgba(77,163,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">Motor Specifications</div>
+        <div><span class="badge">Power</span> ≥<b>${Math.round(minMotorPower)}W</b> mechanical (≥<b>${Math.round(electricalPower)}W</b> electrical)</div>
+        ${minTorque > 0 ? `<div><span class="badge">Torque</span> ≥<b>${Math.round(minTorque)}Nm</b> at crank</div>` : ''}
+        <div><span class="badge">Max RPM</span> ≥<b>${constraints.maxRpm}</b> (as specified)</div>
+      </div>`;
+    }
+    
+    if (minBatteryAh > 0 || batteryAmp > 0) {
+      const roundedAmp = Math.round(batteryAmp * 10) / 10;
+      const roundedAh = Math.round(minBatteryAh * 10) / 10;
+      const roundedWh = Math.round(minBatteryAh * constraints.batteryV);
+      
+      output += `<div style="background: rgba(255,184,77,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        <div style="font-weight: 600; color: var(--warn); margin-bottom: 8px;">Battery & Controller</div>
+        <div><span class="badge">Voltage</span> <b>${constraints.batteryV}V</b> (as specified)</div>
+        ${batteryAmp > 0 ? `<div><span class="badge">Controller</span> ≥<b>${roundedAmp}A</b> continuous current</div>` : ''}
+        ${minBatteryAh > 0 ? `<div><span class="badge">Capacity</span> ≥<b>${roundedAh}Ah</b> (≥<b>${roundedWh}Wh</b>)</div>` : ''}
+      </div>`;
+    }
+    
+    if (suggestedGearing.recommendation) {
+      output += `<div style="background: rgba(196,139,255,0.1); padding: 12px; border-radius: 8px;">
+        <div style="font-weight: 600; color: #c48bff; margin-bottom: 8px;">Recommended Gearing</div>
+        <div><span class="badge">Drivetrain</span> <b>${suggestedGearing.recommendation}</b></div>
+        <div class="small muted" style="margin-top: 4px;">Based on chainring range ${constraints.chainringMin}-${constraints.chainringMax}T and standard cassette options</div>
+      </div>`;
+    }
+    
+    if (report.length === 0) {
+      output = `<div class="no">No requirements selected. Check the boxes next to requirements you want to enforce.</div>`;
+    }
+    
+    $('#designOut').innerHTML = output;
+  }
 
-    let report='';
-    if(topFlatMph < targetTopMph){ report += `<div class="no">Flat power-limited top speed is ${fmt(mphToDisplay(topFlatMph),1)} ${unitLabel()}, below target ${fmt(mphToDisplay(targetTopMph),1)} ${unitLabel()}.</div>`; }
-    const gPower = ((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr;
-    if(gPower < targetGrade){ report += `<div class="no">Power-limited grade at ${fmt(mphToDisplay(climbMph),1)} ${unitLabel()} is ${(gPower*100).toFixed(1)}%, below target ${(targetGrade*100).toFixed(1)}%.</div>`; }
-    if(!report) report = `<div class="ok">Targets look power-feasible. Now checking gearing…</div>`;
-
-    let suggestion='';
-    if(fixedWhat==='none'){
-      let best=null;
-      stdSmall.forEach(s=>{
-       
-
-        const ring = Math.ceil(ratioReq*s);
-        const L = pickLarge(ring);
-        if(L){ if(!best || ring<best.ring) best={ring,s,L}; }
-      });
-      suggestion = best
-        ? `Suggested: <b>${best.ring}T</b> ring with cassette <b>${best.s}–${best.L}T</b>.`
-        : `No standard combo (11–14T top, 26–50T low) meets both targets; raise rpm/power or relax targets.`;
-    } else if(fixedWhat==='ring'){
-      const s = pickSmall(fixedRing);
-      const L = pickLarge(fixedRing);
-      if(s && L) suggestion = `With a fixed <b>${fixedRing}T</b> ring, use cassette about <b>${s}–${L}T</b>.`;
-      else if(!s && L) suggestion = `Top-speed target demands a smaller top cog than standard allows for a ${fixedRing}T ring. Increase ring size or rpm.`;
-      else if(s && !L) suggestion = `Climb target needs a larger low cog (≥${Math.ceil(fixedRing*Tw_req/(Tcrank*eff))}T). Consider 40–50T low or a smaller ring.`;
-      else suggestion = `Both targets conflict for a ${fixedRing}T ring. Raise rpm/power or adjust targets.`;
+  function runRobustnessAnalysis(){
+    const N = Math.max(50, parseInt($('#N').value) || 500);
+    
+    // Get current system specs (use main form values)
+    const baseSpecs = {
+      mass: parseFloat($('#mass').value) || 160,
+      frontTeeth: parseInt($('#frontTeeth').value) || 40,
+      rearCogs: parseRear($('#rearCogs').value),
+      voltage: parseFloat($('#voltage').value) || 52,
+      current: parseFloat($('#current').value) || 30,
+      motorEff: parseFloat($('#motorEff').value) || 0.82,
+      crankTorque: parseFloat($('#crankTorque').value) || 160,
+      maxCadence: parseFloat($('#maxCadence').value) || 140,
+      driveEff: parseFloat($('#driveEff').value) || 0.95,
+      riderW: parseFloat($('#riderW').value) || 0,
+      wheelCirc: getCirc()
+    };
+    
+    // Variation percentages
+    const variations = {
+      mass: parseFloat($('#var_mass').value) / 100,
+      aero: parseFloat($('#var_aero').value) / 100,
+      rolling: parseFloat($('#var_rolling').value) / 100,
+      torque: parseFloat($('#var_torque').value) / 100,
+      power: parseFloat($('#var_power').value) / 100,
+      efficiency: parseFloat($('#var_efficiency').value) / 100
+    };
+    
+    // Test targets (use current main form targets)
+    const targets = {
+      topSpeed: getSpeedInputMph('climbMph') * 10, // Rough top speed estimate
+      climbGrade: 15, // 15% grade
+      climbSpeed: getSpeedInputMph('climbMph')
+    };
+    
+    function randomVariation(base, variation) {
+      return base * (1 + (Math.random() - 0.5) * 2 * variation);
+    }
+    
+    let successCount = 0;
+    const failures = { power: 0, torque: 0, rpm: 0, total: 0 };
+    
+    for (let i = 0; i < N; i++) {
+      // Apply random variations
+      const scenario = {
+        mass: randomVariation(baseSpecs.mass, variations.mass),
+        Crr: randomVariation(0.006, variations.rolling),
+        CdA: randomVariation(0.60, variations.aero),
+        motorPower: randomVariation(baseSpecs.voltage * baseSpecs.current * baseSpecs.motorEff, variations.power),
+        crankTorque: randomVariation(baseSpecs.crankTorque, variations.torque),
+        driveEff: Math.min(0.98, randomVariation(baseSpecs.driveEff, variations.efficiency)),
+        motorEff: Math.min(0.95, randomVariation(baseSpecs.motorEff, variations.efficiency))
+      };
+      
+      // Test scenario against targets
+      let scenarioPass = true;
+      
+      // 1. Test climb capability
+      const vClimb = targets.climbSpeed * MPS_PER_MPH;
+      const grade = targets.climbGrade / 100;
+      
+      // Power requirement
+      const Paero = 0.5 * 1.20 * scenario.CdA * vClimb * vClimb * vClimb;
+      const Proll = scenario.mass * g * scenario.Crr * vClimb;
+      const Pgrav = scenario.mass * g * grade * vClimb;
+      const PneededTotal = Paero + Proll + Pgrav - baseSpecs.riderW;
+      
+      if (PneededTotal > scenario.motorPower) {
+        scenarioPass = false;
+        failures.power++;
+      }
+      
+      // Torque requirement
+      const thrustNeeded = PneededTotal / vClimb;
+      const wheelTorqueNeeded = thrustNeeded * (baseSpecs.wheelCirc / (2 * Math.PI));
+      const crankTorqueNeeded = wheelTorqueNeeded / scenario.driveEff;
+      
+      if (crankTorqueNeeded > scenario.crankTorque) {
+        scenarioPass = false;
+        failures.torque++;
+      }
+      
+      // RPM feasibility for top speed
+      const topSpeedMps = binSearchTopSpeedFlat(scenario.motorPower, scenario.mass, scenario.Crr, 1.20, scenario.CdA);
+      const maxRatioForSpeed = (topSpeedMps * 60) / (baseSpecs.maxCadence * baseSpecs.wheelCirc);
+      const actualTopRatio = baseSpecs.frontTeeth / Math.min(...baseSpecs.rearCogs);
+      
+      if (actualTopRatio > maxRatioForSpeed) {
+        scenarioPass = false;
+        failures.rpm++;
+      }
+      
+      if (scenarioPass) successCount++;
+    }
+    
+    const successRate = (successCount / N) * 100;
+    
+    let output = `<div style="background: ${successRate > 90 ? 'rgba(125,255,176,0.1)' : successRate > 70 ? 'rgba(255,184,77,0.1)' : 'rgba(255,107,107,0.1)'}; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+      <div style="font-weight: 600; margin-bottom: 8px;">Robustness Results</div>
+      <div><span class="badge">Success Rate</span> <b>${fmt(successRate, 1)}%</b> of ${N} scenarios passed all requirements</div>
+    </div>`;
+    
+    if (successRate < 100) {
+      output += `<div style="background: rgba(255,107,107,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+        <div style="font-weight: 600; color: var(--danger); margin-bottom: 8px;">Failure Analysis</div>
+        <div><span class="badge">Power Limited</span> ${failures.power} scenarios (${fmt(failures.power/N*100, 1)}%)</div>
+        <div><span class="badge">Torque Limited</span> ${failures.torque} scenarios (${fmt(failures.torque/N*100, 1)}%)</div>
+        <div><span class="badge">RPM Limited</span> ${failures.rpm} scenarios (${fmt(failures.rpm/N*100, 1)}%)</div>
+      </div>`;
+    }
+    
+    // Recommendations
+    if (successRate < 85) {
+      output += `<div style="background: rgba(77,163,255,0.1); padding: 12px; border-radius: 8px;">
+        <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">Recommendations for Improved Robustness</div>`;
+      
+      if (failures.power > N * 0.1) {
+        output += `<div>• Increase motor power by ~${Math.ceil((failures.power/N) * 20)}% for better power margin</div>`;
+      }
+      if (failures.torque > N * 0.1) {
+        output += `<div>• Increase motor torque by ~${Math.ceil((failures.torque/N) * 15)}% or use larger rear cogs</div>`;
+      }
+      if (failures.rpm > N * 0.1) {
+        output += `<div>• Increase max RPM or use smaller front chainring / larger top cog</div>`;
+      }
+      
+      output += `</div>`;
     } else {
-      const frontMin = Math.ceil(ratioReq*fixedSmall);
-      const frontMax = Math.floor( (fixedLarge*Tcrank*eff)/Tw_req );
-      if(frontMin <= frontMax){
-        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b>, pick a ring around <b>${frontMin}T</b> (any in <b>${frontMin}–${frontMax}T</b> works).`;
-      } else {
-        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b> there's no ring that hits both targets. Increase low cog to ≥<b>${Math.ceil(frontMin*Tw_req/(Tcrank*eff))}T</b> or raise rpm/power.`;
-      }
+      output += `<div class="ok">System shows good robustness across realistic variations. Your current specs provide adequate safety margins.</div>`;
     }
-
-    $('#solveOut').innerHTML = report + `<div style="margin-top:6px">${suggestion}</div>`;
+    
+    $('#robustnessOut').innerHTML = output;
   }
 
-  function rand(min,max){ return min + Math.random()*(max-min); }
-  function percentile(arr,p){
-    if(arr.length===0) return NaN;
-    const a=arr.slice().sort((x,y)=>x-y);
-    const idx=Math.min(a.length-1, Math.max(0, Math.floor((p/100)*(a.length-1))));
-    return a[idx];
+  function getSpeedInputFromDisplay(displayValue) {
+    return speedUnit === 'mph' ? parseFloat(displayValue) : parseFloat(displayValue) / 1.609344;
   }
 
-  function runUncertainty(){
-    const N = Math.max(10, parseInt($('#N').value,10)||300);
-    const circ=getCirc(), radius=circ/(2*Math.PI);
-    const front=parseInt($('#frontTeeth').value,10);
-    const climbMph=getSpeedInputMph('climbMph'), v=climbMph*MPS_PER_MPH;
-    const targetTopMph=getSpeedInputMph('targetTopMph'), targetGrade=parseFloat($('#targetGradePct').value)/100;
-    const fixedWhat=$('#fixedWhat').value;
-    const fixedRing=parseInt($('#fixedRing').value,10);
-    const fixedSmall=parseInt($('#fixedSmall').value,10);
-    const fixedLarge=parseInt($('#fixedLarge').value,10);
-    const mode=$('#powerMode').value;
-    const chainEff=parseFloat($('#driveEff').value);
-
-    const mMin=parseFloat($('#u_mass_min').value), mMax=parseFloat($('#u_mass_max').value);
-    const rpmMin=parseFloat($('#u_rpm_min').value), rpmMax=parseFloat($('#u_rpm_max').value);
-    const Vmin=parseFloat($('#u_V_min').value), Vmax=parseFloat($('#u_V_max').value);
-    const Amin=parseFloat($('#u_A_min').value), Amax=parseFloat($('#u_A_max').value);
-    const effMin=parseFloat($('#u_eff_min').value), effMax=parseFloat($('#u_eff_max').value);
-    const TMin=parseFloat($('#u_T_min').value), TMax=parseFloat($('#u_T_max').value);
-    const RWmin=parseFloat($('#u_RW_min').value), RWmax=parseFloat($('#u_RW_max').value);
-    const mechW_base=parseFloat($('#mechW').value);
-
-    let feasible=0, powerTopFails=0, powerClimbFails=0, gearTopFails=0, gearClimbFails=0;
-    const reqRingList=[], reqSmallList=[], reqLargeList=[];
-
-    for(let i=0;i<N;i++){
-      const m=rand(mMin,mMax), Crr=rand(0.005,0.008), CdA=rand(0.55,0.70), rho=1.20;
-      const RW=rand(RWmin,RWmax);
-      const rpm=rand(rpmMin,rpmMax);
-      const V=mode==='va'?rand(Vmin,Vmax):parseFloat($('#voltage').value);
-      const A=mode==='va'?rand(Amin,Amax):parseFloat($('#current').value);
-      const eff=mode==='va'?rand(effMin,effMax):parseFloat($('#motorEff').value);
-      const Tcrank=rand(TMin,TMax);
-      const P_mech = (mode==='va' ? (V*A*eff) : mechW_base) + RW;
-
-      const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
-      const topFlatMph = vFlat*MPH_PER_MPS;
-      const needTopMps = targetTopMph * MPS_PER_MPH;
-      const ratioReq = needTopMps*60/(rpm*circ);
-      const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
-
-      let powerOK = (topFlatMph >= targetTopMph) && ((((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr) >= targetGrade);
-      if(!powerOK){
-        if(topFlatMph < targetTopMph) powerTopFails++; else powerClimbFails++;
-      }
-
-      let gearOK=false, needRing=null, needSmall=null, needLarge=null;
-      function needLargeFor(frontTeeth){ return Math.ceil(frontTeeth * Tw_req/(Tcrank*chainEff)); }
-
-      if(fixedWhat==='none'){
-        let best=null;
-        stdSmall.forEach(s=>{
-          const ring = Math.ceil(ratioReq*s);
-          const Lneed = needLargeFor(ring);
-          const L = stdLarge.find(x=>x>=Lneed);
-          if(L){ const cand={ring,s,L}; if(!best || ring<best.ring) best=cand; }
-        });
-        if(best){ gearOK=true; needRing=best.ring; needSmall=best.s; needLarge=best.L; }
-      } else if(fixedWhat==='ring'){
-        const maxSmall = Math.floor(fixedRing/ratioReq);
-        const s = stdSmall.filter(x=>x<=maxSmall).slice(-1)[0];
-        const Lneed = needLargeFor(fixedRing);
-        const L = stdLarge.find(x=>x>=Lneed);
-        if(s && L){ gearOK=true; needRing=fixedRing; needSmall=s; needLarge=L; }
-      } else {
-        const ringMin = Math.ceil(ratioReq*fixedSmall);
-        const ringMax = Math.floor( (fixedLarge*chainEff)/ (Tw_req/ (Tcrank)) );
-        if(ringMin<=ringMax){ gearOK=true; needRing=ringMin; needSmall=fixedSmall; needLarge=fixedLarge; }
-      }
-
-      if(!gearOK){ if(topFlatMph >= targetTopMph) gearTopFails++; else gearClimbFails++; }
-
-      if(powerOK && gearOK){
-        feasible++;
-        reqRingList.push(needRing);
-        reqSmallList.push(needSmall);
-        reqLargeList.push(needLarge);
-      }
-    }
-
-    const cov = feasible/N*100;
-    const ringP95 = Math.ceil(percentile(reqRingList,95));
-    const ringP100 = Math.ceil(percentile(reqRingList,100));
-    const smallMax = reqSmallList.length? Math.max(...reqSmallList) : NaN;
-    const largeP95 = percentile(reqLargeList,95);
-    const largeP100 = percentile(reqLargeList,100);
-
-    let txt = `<div><span class="badge">Coverage</span> ${fmt(cov,1)}% of ${N} scenarios meet both power & gearing with your constraints.</div>`;
-    if(N-feasible>0){
-      txt += `<div style="margin-top:4px"><span class="badge">Why failures?</span> power(flat top) ${powerTopFails}, power(climb) ${powerClimbFails}, gearing limits ${gearTopFails+gearClimbFails}.</div>`;
-    }
-
-    if(reqRingList.length>0){
-      txt += `<div style="margin-top:6px"><span class="badge">95% design</span> choose ring ≈ <b>${ringP95}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP95}T</b>.</div>`;
-      txt += `<div style="margin-top:4px"><span class="badge">100% design</span> ring ≈ <b>${ringP100}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP100}T</b>.</div>`;
-      txt += `<div class="note" style="margin-top:4px">Pick the nearest real parts: small from [11,12,13,14] and low from [26,28,30,32,34,36,40,42,46,50].</div>`;
-    }else{
-      txt += `<div class="no" style="margin-top:6px">No scenario satisfied both power and gearing with the current constraints. Consider raising rpm/power or relaxing targets.</div>`;
-    }
-
-    $('#uncOut').innerHTML = txt;
+  function setSystemLabels() {
+    $('#lbl_sys_topSpeed').textContent = `Target top speed (${unitLabel()})`;
+    $('#lbl_sys_climbSpeed').textContent = `Climb speed (${unitLabel()})`;
+    $('#lbl_sys_range').textContent = `Range (${speedUnit === 'mph' ? 'miles' : 'km'})`;
+    $('#lbl_sys_rangeSpeed').textContent = `Range cruise speed (${unitLabel()})`;
   }
 
   /* ---------- UI glue, events, presets, share, csv ---------- */
@@ -1366,6 +1637,8 @@
   $$('.pill[data-rear]').forEach(btn=> btn.addEventListener('click', ()=>{ $('#rearCogs').value=btn.getAttribute('data-rear'); compute(); }));
   $('#preset_power').addEventListener('click', ()=>{ $('#powerMode').value='va'; $('#voltage').value=52; $('#current').value=30; $('#motorEff').value=0.82; updateModeUI(); compute(); });
   $('#preset_rpm').addEventListener('click', ()=>{ $('#maxCadence').value=150; compute(); });
+  $('#designBtn').addEventListener('click', designSystem);
+  $('#robustnessBtn').addEventListener('click', runRobustnessAnalysis);
   $('#solveBtn').addEventListener('click', solve);
   $('#uncBtn').addEventListener('click', runUncertainty);
   $('#powerMode').addEventListener('change', ()=>{ updateModeUI(); compute(); });
@@ -1373,16 +1646,14 @@
   // Unit toggle
   $('#u_mph').addEventListener('click', ()=>{
     if(speedUnit==='mph') return;
-    ['climbMph','rangeMph','targetTopMph'].forEach(id=>{
-      const v = parseFloat($('#'+id).value)||0; $('#'+id).value = (v/1.609344).toFixed(2);
-    });
+    $$('#u_mph,u_kph').forEach(b=>b.classList.remove('active'));
+    $('#u_mph').classList.add('active');
     speedUnit='mph'; setUnitButtons(); setSpeedLabels(); compute();
   });
   $('#u_kph').addEventListener('click', ()=>{
     if(speedUnit==='kph') return;
-    ['climbMph','rangeMph','targetTopMph'].forEach(id=>{
-      const v = parseFloat($('#'+id).value)||0; $('#'+id).value = (v*1.609344).toFixed(2);
-    });
+    $$('#u_mph,u_kph').forEach(b=>b.classList.remove('active'));
+    $('#u_kph').classList.add('active');
     speedUnit='kph'; setUnitButtons(); setSpeedLabels(); compute();
   });
 
@@ -1393,12 +1664,8 @@
 
   // Arrow keys gear shift (ignore when typing)
   document.addEventListener('keydown', (e)=>{
-    if(e.key!=='ArrowUp' && e.key!=='ArrowDown') return;
-    const ae = document.activeElement;
-    if(ae && (ae.tagName==='INPUT' || ae.TAGNAME==='TEXTAREA' || ae.tagName==='SELECT' || ae.isContentEditable)) return;
-    const rears=parseRear($('#rearCogs').value);
-    if(e.key==='ArrowUp'){ gearIndex++; gearIndex=clampGear(gearIndex,rears); compute(); e.preventDefault(); }
-    if(e.key==='ArrowDown'){ gearIndex--; gearIndex=clampGear(gearIndex,rears); compute(); e.preventDefault(); }
+    if(e.key==='ArrowUp'){ gearIndex++; gearIndex=clampGear(gearIndex,rears); compute(); }
+    else if(e.key==='ArrowDown'){ gearIndex--; gearIndex=clampGear(gearIndex,rears); compute(); e.preventDefault(); }
   });
   $('#gearUp').addEventListener('click', ()=>{ gearIndex++; compute(); });
   $('#gearDown').addEventListener('click', ()=>{ gearIndex--; compute(); });
@@ -1423,15 +1690,19 @@
 
   // Presets
   $('#savePreset').addEventListener('click', ()=>{
-    const name = ($('#presetName').value||'').trim();
-    if(!name){ alert('Name the preset first.'); return; }
+    const name = $('#presetName').value.trim();
+    if(!name){ alert('Preset name cannot be empty.'); return; }
     const store = JSON.parse(localStorage.getItem('mdp_presets')||'{}');
-    store[name] = getConfigObject();
+    const config = getConfigObject();
+    store[name] = config;
     localStorage.setItem('mdp_presets', JSON.stringify(store));
     loadPresetNames();
+    $('#presetName').value='';
+    alert('Preset saved.');
   });
   $('#loadPreset').addEventListener('change', ()=>{
-    const name = $('#loadPreset').value; if(!name) return;
+    const name = $('#loadPreset').value;
+    if(!name){ resetDefaults(); compute(); return; }
     const store = JSON.parse(localStorage.getItem('mdp_presets')||'{}');
     if(store[name]) applyConfigObject(store[name]);
   });
@@ -1445,91 +1716,260 @@
 
   // Share URL
   $('#shareBtn').addEventListener('click', ()=>{
-    const obj = getConfigObject();
-    try{
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
-      const url = `${location.origin}${location.pathname}#cfg=${b64}`;
-      navigator.clipboard?.writeText(url);
-      $('#shareMsg').textContent = 'Link copied';
-      setTimeout(()=>$('#shareMsg').textContent='', 1500);
-      history.replaceState(null,'',url);
-    }catch(e){
-      $('#shareMsg').textContent = 'Share failed';
-      setTimeout(()=>$('#shareMsg').textContent='', 1500);
-    }
-  });
-  (function tryImportFromHash(){
-    const h = location.hash||'';
-    const m = h.match(/#cfg=([^&]+)/);
-    if(m){
-      try{
-        const obj = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
-        applyConfigObject(obj);
-      }catch(e){ /* ignore */ }
-    }
-  })();
-
-  // CSV export
-  $('#exportCsv').addEventListener('click', ()=>{
-    const rows = [['Gear','Ratio','Top speed ('+unitLabel()+')','Wheel torque (Nm)','Max grade (torque @v)','Max grade (actual @v)']];
-    $$('#resultTable tbody tr').forEach(tr=>{
-      const cols=Array.from(tr.children).map(td=>td.textContent);
-      rows.push(cols);
+    const url = new URL(window.location);
+    const params = new URLSearchParams();
+    $$('.calc-param').forEach(el=>{
+      if(el.id) params.set(el.id, el.value);
     });
-    const csv = rows.map(r=>r.map(x=>{
-      const s=String(x); return (s.includes(',')||s.includes('"')||s.includes('\n'))?('"'+s.replace(/"/g,'""')+'"'):s;
-    }).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'per-gear-results.csv';
-    document.body.appendChild(a); a.click(); a.remove();
+    params.set('__speedUnit', speedUnit);
+    params.set('__fxEnabled', fxEnabled);
+    url.search = params.toString();
+    const txt = `Share this URL for your bike setup: ${url.href}`;
+    $('#shareMsg').textContent = txt;
+    navigator.clipboard.writeText(txt).then(()=>{ alert('Share URL copied to clipboard!'); });
   });
 
   // Resize re-draw
   window.addEventListener('resize', ()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>{ drawGearCanvas(parseRear($('#rearCogs').value)); compute(); },120); }, {passive:true});
   if('ResizeObserver' in window){
-    const ro = new ResizeObserver(()=>{ drawGearCanvas(parseRear($('#rearCogs').value)); compute(); });
-    ['chartSlope','chartSpeed','chartTorque','chartGrade','gearCanvas'].forEach(id=>{
+    const ro = new ResizeObserver(entries=>{
+      for(const entry of entries){
+        const id = entry.target.id;
+        if(id==='gearCanvas'){
+          drawGearCanvas(parseRear($('#rearCogs').value));
+        }
+      }
+    });
+    ['gearCanvas'].forEach(id=>{
       const el = document.getElementById(id); if(el) ro.observe(el);
     });
   }
 
   /* ---------- Animation loop ---------- */
   function tick(ts){
-    if(!animRunning){ return; }
+    if(!animRunning || !fxEnabled) return;
     if(!lastT) lastT = ts;
     const dt = Math.min(0.05, (ts - lastT)/1000);
     lastT = ts;
 
     const rears = parseRear($('#rearCogs').value);
-    if(!rears.length){ animRunning=false; return; }
+    if(!rears.length) return;
 
     const frontT = parseInt($('#frontTeeth').value,10)||40;
-    const rearT  = rears[gearIndex];
+    const rearT = rears[gearIndex];
     const visRpm = Math.max(0, parseFloat($('#visRpmNum').value)||1);
-    const ratio  = frontT/rearT;
+    const ratio = frontT/rearT;
 
+    // Calculate angular velocities in radians per second
     const wFront = 2*Math.PI*(visRpm/60);
-    const wRear  = 2*Math.PI*(visRpm*ratio/60);
+    const wRear = 2*Math.PI*(visRpm*ratio/60);
 
-    angFront += wFront*dt;
-    angRear  += wRear*dt;
+    // Update rotation angles
+    angFront += wFront * dt;
+    angRear += wRear * dt;
 
+    // Update chain animation
     const rFront = Math.max(20, Math.sqrt(frontT)*2.4);
     const chainSpeedPxPerSec = (2*Math.PI*rFront) * (visRpm/60);
-    chainOffset += chainSpeedPxPerSec*dt;
+    chainOffset += chainSpeedPxPerSec * dt;
 
     drawGearCanvas(rears);
     animId = requestAnimationFrame(tick);
   }
+
   function startAnim(){
     if(!fxEnabled) return;
     if(animId) cancelAnimationFrame(animId);
-    lastT = 0; animId = requestAnimationFrame(tick);
+    lastT = 0;
+    animId = requestAnimationFrame(tick);
   }
   function stopAnim(){
     if(animId){ cancelAnimationFrame(animId); animId = null; }
+  }
+
+  // Add the missing solve and runUncertainty functions:
+  function solve(){
+    const circ=getCirc(), radius=circ/(2*Math.PI);
+    const m=parseFloat($('#mass').value), Crr=0.006, CdA=0.60, rho=1.20;
+    const riderW=Math.max(0,parseFloat($('#riderW').value));
+    const Tcrank=parseFloat($('#crankTorque').value), eff=parseFloat($('#driveEff').value);
+    const V=parseFloat($('#voltage').value), A=parseFloat($('#current').value), motorEff=parseFloat($('#motorEff').value);
+    const maxCad=parseFloat($('#maxCadence').value);
+    const climbMph=getSpeedInputMph('climbMph'), v=climbMph*MPS_PER_MPH;
+    const targetTopMph=getSpeedInputMph('targetTopMph'), targetGrade=(parseFloat($('#targetGradePct').value)||0)/100;
+    const fixedWhat=$('#fixedWhat').value;
+    const fixedRing=parseInt($('#fixedRing').value,10);
+    const fixedSmall=parseInt($('#fixedSmall').value,10);
+    const fixedLarge=parseInt($('#fixedLarge').value,10);
+
+    const mode=$('#powerMode').value;
+    let P_mech=0;
+    if(mode==='va'){ P_mech=V*A*motorEff; } else { P_mech=Math.max(0,parseFloat($('#mechW').value)||0); }
+    P_mech += riderW;
+
+    const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+    const topFlatMph = vFlat*MPH_PER_MPS;
+    const needTopMps = targetTopMph * MPS_PER_MPH;
+    const ratioReq = needTopMps*60/(maxCad*circ);
+    const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
+
+    function pickSmall(front){
+      const maxSmall = Math.floor(front/ratioReq);
+      const cand = stdSmall.filter(s=>s<=maxSmall);
+      return cand.length? Math.max(...cand) : null;
+    }
+    function pickLarge(front){
+      const rearNeeded = Math.ceil(front * Tw_req/(Tcrank*eff));
+      const cand = stdLarge.filter(L=>L>=rearNeeded);
+      return cand.length? Math.min(...cand) : null;
+    }
+
+    let report='';
+    if(topFlatMph < targetTopMph){ report += `<div class="no">Flat power-limited top speed is ${fmt(mphToDisplay(topFlatMph),1)} ${unitLabel()}, below target ${fmt(mphToDisplay(targetTopMph),1)} ${unitLabel()}.</div>`; }
+    const gPower = ((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr;
+    if(gPower < targetGrade){ report += `<div class="no">Power-limited grade at ${fmt(mphToDisplay(climbMph),1)} ${unitLabel()} is ${(gPower*100).toFixed(1)}%, below target ${(targetGrade*100).toFixed(1)}%.</div>`; }
+    if(!report) report = `<div class="ok">Targets look power-feasible. Now checking gearing…</div>`;
+
+    let suggestion='';
+    if(fixedWhat==='none'){
+      let best=null;
+      stdSmall.forEach(s=>{
+        const ring = Math.ceil(ratioReq*s);
+        const L = pickLarge(ring);
+        if(L){ if(!best || ring<best.ring) best={ring,s,L}; }
+      });
+      suggestion = best
+        ? `Suggested: <b>${best.ring}T</b> ring with cassette <b>${best.s}–${best.L}T</b>.`
+        : `No standard combo (11–14T top, 26–50T low) meets both targets; raise rpm/power or relax targets.`;
+    } else if(fixedWhat==='ring'){
+      const s = pickSmall(fixedRing);
+      const L = pickLarge(fixedRing);
+      if(s && L) suggestion = `With a fixed <b>${fixedRing}T</b> ring, use cassette about <b>${s}–${L}T</b>.`;
+      else if(!s && L) suggestion = `Top-speed target demands a smaller top cog than standard allows for a ${fixedRing}T ring. Increase ring size or rpm.`;
+      else if(s && !L) suggestion = `Climb target needs a larger low cog (≥${Math.ceil(fixedRing*Tw_req/(Tcrank*eff))}T). Consider 40–50T low or a smaller ring.`;
+      else suggestion = `Both targets conflict for a ${fixedRing}T ring. Raise rpm/power or adjust targets.`;
+    } else {
+      const frontMin = Math.ceil(ratioReq*fixedSmall);
+      const frontMax = Math.floor( (fixedLarge*Tcrank*eff)/Tw_req );
+      if(frontMin <= frontMax){
+        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b>, pick a ring around <b>${frontMin}T</b> (any in <b>${frontMin}–${frontMax}T</b> works).`;
+      } else {
+        suggestion = `With cassette <b>${fixedSmall}–${fixedLarge}T</b> there's no ring that hits both targets. Increase low cog to ≥<b>${Math.ceil(frontMin*Tw_req/(Tcrank*eff))}T</b> or raise rpm/power.`;
+      }
+    }
+
+    $('#solveOut').innerHTML = report + `<div style="margin-top:6px">${suggestion}</div>`;
+  }
+
+  function rand(min,max){ return min + Math.random()*(max-min); }
+  function percentile(arr,p){
+    if(arr.length===0) return NaN;
+    const a=arr.slice().sort((x,y)=>x-y);
+    const idx=Math.min(a.length-1, Math.max(0, Math.floor((p/100)*(a.length-1))));
+    return a[idx];
+  }
+
+  function runUncertainty(){
+    const N = Math.max(10, parseInt($('#u_N').value,10)||300);
+    const circ=getCirc(), radius=circ/(2*Math.PI);
+    const front=parseInt($('#frontTeeth').value,10);
+    const climbMph=getSpeedInputMph('climbMph'), v=climbMph*MPS_PER_MPH;
+    const targetTopMph=getSpeedInputMph('targetTopMph'), targetGrade=parseFloat($('#targetGradePct').value)/100;
+    const fixedWhat=$('#fixedWhat').value;
+    const fixedRing=parseInt($('#fixedRing').value,10);
+    const fixedSmall=parseInt($('#fixedSmall').value,10);
+    const fixedLarge=parseInt($('#fixedLarge').value,10);
+    const mode=$('#powerMode').value;
+    const chainEff=parseFloat($('#driveEff').value);
+
+    const mMin=parseFloat($('#u_mass_min').value), mMax=parseFloat($('#u_mass_max').value);
+    const rpmMin=parseFloat($('#u_rpm_min').value), rpmMax=parseFloat($('#u_rpm_max').value);
+    const Vmin=parseFloat($('#u_V_min').value), Vmax=parseFloat($('#u_V_max').value);
+    const Amin=parseFloat($('#u_A_min').value), Amax=parseFloat($('#u_A_max').value);
+    const effMin=parseFloat($('#u_eff_min').value), effMax=parseFloat($('#u_eff_max').value);
+    const TMin=parseFloat($('#u_T_min').value), TMax=parseFloat($('#u_T_max').value);
+    const RWmin=parseFloat($('#u_RW_min').value), RWmax=parseFloat($('#u_RW_max').value);
+    const mechW_base=parseFloat($('#mechW').value);
+
+    let feasible=0, powerTopFails=0, powerClimbFails=0, gearTopFails=0, gearClimbFails=0;
+    const reqRingList=[], reqSmallList=[], reqLargeList=[];
+
+    for(let i=0;i<N;i++){
+      const m=rand(mMin,mMax), Crr=rand(0.005,0.008), CdA=rand(0.55,0.70), rho=1.20;
+      const RW=rand(RWmin,RWmax);
+      const rpm=rand(rpmMin,rpmMax);
+      const V=mode==='va'?rand(Vmin,Vmax):parseFloat($('#voltage').value);
+      const A=mode==='va'?rand(Amin,Amax):parseFloat($('#current').value);
+      const eff=mode==='va'?rand(effMin,effMax):parseFloat($('#motorEff').value);
+      const Tcrank=rand(TMin,TMax);
+      const P_mech = (mode==='va' ? (V*A*eff) : mechW_base) + RW;
+
+      const vFlat = binSearchTopSpeedFlat(P_mech, m, Crr, rho, CdA);
+      const topFlatMph = vFlat*MPH_PER_MPS;
+      const needTopMps = targetTopMph * MPS_PER_MPH;
+      const ratioReq = needTopMps*60/(rpm*circ);
+      const Tw_req = (((targetGrade + Crr)*m*g) + 0.5*rho*CdA*v*v) * radius;
+
+      let powerOK = (topFlatMph >= targetTopMph) && ((((P_mech/v) - 0.5*rho*CdA*v*v)/(m*g) - Crr) >= targetGrade);
+      if(!powerOK){
+        if(topFlatMph < targetTopMph) powerTopFails++; else powerClimbFails++;
+      }
+
+      let gearOK=false, needRing=null, needSmall=null, needLarge=null;
+      function needLargeFor(frontTeeth){ return Math.ceil(frontTeeth * Tw_req/(Tcrank*chainEff)); }
+
+      if(fixedWhat==='none'){
+        let best=null;
+        stdSmall.forEach(s=>{
+          const ring = Math.ceil(ratioReq*s);
+          const Lneed = needLargeFor(ring);
+          const L = stdLarge.find(x=>x>=Lneed);
+          if(L){ const cand={ring,s,L}; if(!best || ring<best.ring) best=cand; }
+        });
+        if(best){ gearOK=true; needRing=best.ring; needSmall=best.s; needLarge=best.L; }
+      } else if(fixedWhat==='ring'){
+        const maxSmall = Math.floor(fixedRing/ratioReq);
+        const s = stdSmall.filter(x=>x<=maxSmall).slice(-1)[0];
+        const Lneed = needLargeFor(fixedRing);
+        const L = stdLarge.find(x=>x>=Lneed);
+        if(s && L){ gearOK=true; needRing=fixedRing; needSmall=s; needLarge=L; }
+      } else {
+        const frontMin = Math.ceil(ratioReq*fixedSmall);
+        const frontMax = Math.floor( (fixedLarge*Tcrank*eff)/Tw_req );
+        if(frontMin<=frontMax){ gearOK=true; needRing=frontMin; needSmall=fixedSmall; needLarge=fixedLarge; }
+      }
+
+      if(!gearOK){ if(topFlatMph >= targetTopMph) gearTopFails++; else gearClimbFails++; }
+
+      if(powerOK && gearOK){
+        feasible++;
+        reqRingList.push(needRing);
+        reqSmallList.push(needSmall);
+        reqLargeList.push(needLarge);
+      }
+    }
+
+    const cov = feasible/N*100;
+    const ringP95 = Math.ceil(percentile(reqRingList,95));
+    const ringP100 = Math.ceil(percentile(reqRingList,100));
+    const smallMax = reqSmallList.length? Math.max(...reqSmallList) : NaN;
+    const largeP95 = percentile(reqLargeList,95);
+    const largeP100 = percentile(reqLargeList,100);
+
+    let txt = `<div><span class="badge">Coverage</span> ${fmt(cov,1)}% of ${N} scenarios meet both power & gearing with your constraints.</div>`;
+    if(N-feasible>0){
+      txt += `<div style="margin-top:4px"><span class="badge">Why failures?</span> power(flat top) ${powerTopFails}, power(climb) ${powerClimbFails}, gearing limits ${gearTopFails+gearClimbFails}.</div>`;
+    }
+
+    if(reqRingList.length>0){
+      txt += `<div style="margin-top:6px"><span class="badge">95% design</span> choose ring ≈ <b>${ringP95}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP95}T</b>.</div>`;
+      txt += `<div style="margin-top:4px"><span class="badge">100% design</span> ring ≈ <b>${ringP100}T</b>, top cog ≤ <b>${(isNaN(smallMax)?'—':smallMax+'T')}</b>, low cog ≥ <b>${largeP100}T</b>.</div>`;
+      txt += `<div class="note" style="margin-top:4px">Pick the nearest real parts: small from [11,12,13,14] and low from [26,28,30,32,34,36,40,42,46,50].</div>`;
+    }else{
+      txt += `<div class="no" style="margin-top:6px">No scenario satisfied both power and gearing with the current constraints. Consider raising rpm/power or relaxing targets.</div>`;
+    }
+
+    $('#uncOut').innerHTML = txt;
   }
 
   // public controls
@@ -1548,7 +1988,7 @@
     updateModeUI();
   }
 
-  /* ---------- Tooltips: desktop hover + mobile tap ---------- */
+  /* ---------- Tooltip system (desktop + mobile) ---------- */
   let tipSeq = 0;
   function mkTipButton(title, body, below=false){
     const btn = document.createElement('button');
